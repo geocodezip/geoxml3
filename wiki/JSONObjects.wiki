@@ -1,3 +1,5 @@
+#summary KML-equivalents in JSON created by the parser.
+
 =JSON Objects=
 As the product of processing KML documents, `geoXML3.parser` creates a number of JSON objects which are exposed through its `docs` array.
 
