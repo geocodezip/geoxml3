@@ -1,3 +1,5 @@
+#summary Examples of common use cases.
+
 =Usage=
 The geoxml3 library is specifically designed to accomodate a range of use cases, covering developer needs from beginner to advanced. In all cases, you'll need to download a copy of `geoxml3.js` (and `ProjectedOverlay.js`, if you want ground overlays) from this site and serve them to your map page from your own host, as follows:
 {{{
@@ -16,7 +18,7 @@ To let geoxml3 handle all rendering of a KML document, simply instantiate `geoXM
   </script>
 }}}
 
-There are a few other options you can pass to the `geoXML3.parser` constructor to adjust its behavior while still letting it do most of the work; see the *geoXML3.parser* page for details.
+There are a few other options you can pass to the `geoXML3.parser` constructor to adjust its behavior while still letting it do most of the work; see the ParserReference page for details.
 
 ==Use Case 2: Custom Handling of Map Objects==
 If you want more control of the map objects (`Marker`s and `ProjectedOverlay`s) created - say, you want to use a Marker Manager - you can pass callback functions as options to the `geoXML3.parser` constructor, and geoxml3 will call your functions for each marker/overlay rather than creating its own.
@@ -48,7 +50,7 @@ If you want more control of the map objects (`Marker`s and `ProjectedOverlay`s) 
   </script>
 }}}
 
-The parameters passed to the callbacks are JSON objects containing nearly-raw data from the source KML `<Placemark>` and `<GroundOverlay>` elements; see the *JSON Objects* page for details. You can access this data to accomplish whatever marker/overlay processing you like. Alternately, you can call the `geoXML3.parser`'s own `createMarker` and `createOverlay` functions to create (and render) GMaps objects, as shown above.
+The parameters passed to the callbacks are JSON objects containing nearly-raw data from the source KML `<Placemark>` and `<GroundOverlay>` elements; see the JsonObjects page for details. You can access this data to accomplish whatever marker/overlay processing you like. Alternately, you can call the `geoXML3.parser`'s own `createMarker` and `createOverlay` functions to create (and render) GMaps objects, as shown above.
 
 The `geoXML3.parser` will also parse KML `<Style>` elements into GMaps API objects; it applies these styles automatically if it renders map objects itself, or you can access the parsed data using the `styles` property of the `doc` JSON object.
 
@@ -69,4 +71,4 @@ The use of the GMaps API is not required; if you don't ask `geoXML3.parser` to r
   </script>
 }}}
 
-A callback function supplied to the `afterParse` option will be called when parsing of the KML document is complete, and it will be passed a pointer to the parent JSON object for the parsed data. See the *JSON Oblects* page for more info on the `doc` object and its properties.
+A callback function supplied to the `afterParse` option will be called when parsing of the KML document is complete, and it will be passed a pointer to the parent JSON object for the parsed data. See the JsonObjects page for more info on the `doc` object and its properties.
