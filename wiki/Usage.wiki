@@ -32,7 +32,7 @@ If you want more control of the map objects (`Marker`s and `ProjectedOverlay`s) 
       createMarker: addMyMarker,
       createOverlay: addMyOverlay
     });
-    myParser.parse('my_geodata.kml');
+    myParser.parse(['my_geodata1.kml', 'my_geodata2.kml']);
 
     function addMyMarker(placemark) {
       // Marker handling code goes here
@@ -50,7 +50,7 @@ If you want more control of the map objects (`Marker`s and `ProjectedOverlay`s) 
   </script>
 }}}
 
-The parameters passed to the callbacks are JSON objects containing nearly-raw data from the source KML `<Placemark>` and `<GroundOverlay>` elements; see the JsonObjects page for details. You can access this data to accomplish whatever marker/overlay processing you like. Alternately, you can call the `geoXML3.parser`'s own `createMarker` and `createOverlay` functions to create (and render) GMaps objects, as shown above.
+The parameters passed to the callbacks are JSON objects containing lightly-processed data from the source KML `<Placemark>` and `<GroundOverlay>` elements; see JsonObjects for details. You can access this data to accomplish whatever marker/overlay processing you like. Optionally, you can call the `geoXML3.parser`'s own `createMarker` and `createOverlay` functions to create (and render) GMaps objects, as shown above.
 
 The `geoXML3.parser` will also parse KML `<Style>` elements into GMaps API objects; it applies these styles automatically if it renders map objects itself, or you can access the parsed data using the `styles` property of the `doc` JSON object.
 
@@ -59,8 +59,7 @@ The use of the GMaps API is not required; if you don't ask `geoXML3.parser` to r
 {{{
   <script type="text/javascript">
     var myParser = new geoXML3.parser({afterParse: useTheData});
-    myParser.parse('my_geodata1.kml');
-    myParser.parse('my_geodata2.kml');
+    myParser.parse('my_geodata.kml');
 
     function useTheData(doc) {
       // Geodata handling goes here, using JSON properties of the doc object
@@ -71,4 +70,4 @@ The use of the GMaps API is not required; if you don't ask `geoXML3.parser` to r
   </script>
 }}}
 
-A callback function supplied to the `afterParse` option will be called when parsing of the KML document is complete, and it will be passed a pointer to the parent JSON object for the parsed data. See the JsonObjects page for more info on the `doc` object and its properties.
+A callback function supplied to the `afterParse` option will be called when parsing of the KML document is complete, and it will be passed a pointer to the parent JSON object for the parsed data. See JsonObjects for more info on the `doc` object and its properties.
