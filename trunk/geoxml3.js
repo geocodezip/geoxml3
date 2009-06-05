@@ -2,7 +2,7 @@
     geoXML3.js
 
     Renders KML on the Google Maps JavaScript API Version 3 
-    http://code.google.com/p/geoXML3/
+    http://code.google.com/p/geoxml3/
 
 
     This program is free software: you can redistribute it and/or modify
