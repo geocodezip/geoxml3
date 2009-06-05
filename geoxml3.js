@@ -45,22 +45,25 @@ geoXML3.parser = function (options) {
   var parse = function (urls) {
     // Process one or more KML documents
   
-    var thisDoc, i;
-    var oldLength = docs.length;
-
     if (typeof urls === 'string') {
       // Single KML document
       urls = [urls];
     }
 
-    var counter = {remaining: urls.length}; 
-    for (i = 0; i < urls.length; i++) {
-      docs.push({url: urls[i], counter: counter});
-    }
+    // Internal values for the set of documents as a whole
+    var internals = {
+      docSet: [],
+      remaining: urls.length,
+      parserOnly: !parserOptions.afterParse
+    }; 
 
-    for (i = oldLength; i < docs.length; i++) {
-      thisDoc = docs[i];
-      thisDoc.parser = this;
+    var thisDoc;
+    for (var i = 0; i < urls.length; i++) {
+      thisDoc = {
+        url: urls[i], 
+        internals: internals
+      };
+      internals.docSet.push(thisDoc);
       geoXML3.fetchXML(thisDoc.url, function (responseXML) {render(responseXML, thisDoc);});
     }
   };
@@ -207,29 +210,29 @@ geoXML3.parser = function (options) {
         }
       }
 
-      if (!doc.markers &&
-          !doc.overlays &&
-          !parserOptions.afterParse &&
-          !parserOptions.processStyles) {
-        // geoXML3 is being used only as a real-time parser, so garbage-collect the doc object
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i] == doc) {
-            docs.splice(i, 1);
-            break;
-          }
-        }
+      if (!!doc.bounds) {
+        doc.internals.bounds = doc.internals.bounds || new google.maps.LatLngBounds();
+        doc.internals.bounds.union(doc.bounds); 
+      }
+      if (!!doc.styles || !!doc.markers || !!doc.overlays) {
+        doc.internals.parserOnly = false;
       }
 
-      doc.counter.remaining -= 1;
-      if (doc.counter.remaining === 0) {
+      doc.internals.remaining -= 1;
+      if (doc.internals.remaining === 0) {
         // We're done processing this set of KML documents
 
-        // Options that get invoked after the parsing
-        if (doc.bounds) {
-          parserOptions.map.fitBounds(doc.bounds); 
+        // Options that get invoked after parsing completes
+        if (!!doc.internals.bounds) {
+          parserOptions.map.fitBounds(doc.internals.bounds); 
         }
         if (parserOptions.afterParse) {
-          parserOptions.afterParse(doc);
+          parserOptions.afterParse(doc.internals.docSet);
+        }
+
+        if (!doc.internals.parserOnly) {
+          // geoXML3 is not being used only as a real-time parser, so keep the parsed documents around
+          docs.concat(doc.internals.docSet);
         }
       }
     }
