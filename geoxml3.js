@@ -27,7 +27,7 @@ if (!String.prototype.trim) {
 }
 
 // Declare namespace
-geoXML3 = window.geoXML3 || {};
+geoXML3 = window.geoXML3 || {instances: []};
 
 // Constructor for the root KML parser object
 geoXML3.parser = function (options) {
@@ -39,12 +39,17 @@ geoXML3.parser = function (options) {
   });
   var docs = []; // Individual KML documents
   var lastMarker;
+  var parserName;
 
   // Private methods
 
-  var parse = function (urls) {
+  var parse = function (urls, docSet) {
     // Process one or more KML documents
-  
+
+    if (!parserName) {
+      parserName = 'geoXML3.instances[' + (geoXML3.instances.push(this) - 1) + ']';
+    }
+    
     if (typeof urls === 'string') {
       // Single KML document
       urls = [urls];
@@ -52,15 +57,28 @@ geoXML3.parser = function (options) {
 
     // Internal values for the set of documents as a whole
     var internals = {
-      docSet: [],
+      parser: this,
+      docSet: docSet || [],
       remaining: urls.length,
-      parserOnly: !parserOptions.afterParse
-    }; 
-
-    var thisDoc;
+      parseOnly: !(parserOptions.afterParse || parserOptions.processStyles)
+    };
+    var thisDoc, j;
     for (var i = 0; i < urls.length; i++) {
-      thisDoc = {
-        url: urls[i], 
+      var baseUrl = urls[i].split('?')[0];
+      for (j = 0; j < docs.length; j++) {
+        if (baseUrl === docs[j].baseUrl) {
+          // Reloading an existing document
+          thisDoc = docs[j];
+          thisDoc.url       = urls[i];
+          thisDoc.internals = internals;
+          thisDoc.reload    = true;
+          this.docs.splice(j, 1);
+          break;
+        }
+      }
+      thisDoc = thisDoc || {
+        url:       urls[i], 
+        baseUrl:   baseUrl, 
         internals: internals
       };
       internals.docSet.push(thisDoc);
@@ -102,14 +120,14 @@ geoXML3.parser = function (options) {
     } else if (!doc) {
       throw 'geoXML3 internal error: render called with null document';
     } else {
+      var i;
       doc.styles = {};
-      doc.placemarks = [];
+      doc.placemarks     = [];
       doc.groundOverlays = [];
-      if (parserOptions.zoom && !!parserOptions.map)
-        doc.bounds = new google.maps.LatLngBounds();
-  
+      doc.networkLinks   = [];
+
       // Parse styles
-      var styleID, iconNodes, i;
+      var styleID, iconNodes;
       var styleNodes = responseXML.getElementsByTagName('Style');
       for (i = 0; i < styleNodes.length; i++) {
         styleID   = styleNodes[i].getAttribute('id');
@@ -126,7 +144,12 @@ geoXML3.parser = function (options) {
       }
       
       // Parse placemarks
-      var placemark, node, coords, path;
+      if (!!doc.reload && !!doc.markers) {
+        for (i = 0; i < doc.markers.length; i++) {
+          doc.markers[i].active = false;
+        }
+      }
+      var placemark, node, coords, path, marker;
       var placemarkNodes = responseXML.getElementsByTagName('Placemark');
       for (i = 0; i < placemarkNodes.length; i++) {
         // Init the placemark object
@@ -155,21 +178,56 @@ geoXML3.parser = function (options) {
             lng: parseFloat(coords[0]), 
             alt: parseFloat(coords[2])
           };
-          if (!!doc.bounds) {
+          if (parserOptions.zoom && !!google.maps) {
+            doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(new google.maps.LatLng(placemark.point.lat, placemark.point.lng));
           }
 
-          // Call the appropriate function to create the marker
           if (!!parserOptions.createMarker) {
+            // User-defined marker handler
             parserOptions.createMarker(placemark, doc);
           } else {
-            createMarker(placemark, doc);
+            // Check to see if this marker was created on a previous load of this document
+            var found = false;
+            if (!!doc) {
+              doc.markers = doc.markers || [];
+              if (doc.reload) {
+                for (i = 0; i < doc.markers.length; i++) {
+                  if (doc.markers[i].get_position().equals(markerOptions.position)) {
+                    found = doc.markers[i].active = true;
+                    break;
+                  }
+                }
+              } 
+            }
+
+            if (!found) {
+              // Call the built-in marker creator
+              marker = createMarker(placemark, doc);
+              marker.active = true;
+            }
           }
         }
       }
-  
+      if (!!doc.reload && !!doc.markers) {
+        for (i = doc.markers.length - 1; i >= 0 ; i--) {
+          if (!doc.markers[i].active) {
+            if (!!doc.markers[i].infoWindow) {
+              doc.markers[i].infoWindow.close();
+            }
+            doc.markers[i].set_map(null);
+            doc.markers.splice(i, 1);
+          }
+        }
+      }
+
       // Parse ground overlays
-      var groundOverlay, color, transparency;
+      if (!!doc.reload && !!doc.overlays) {
+        for (i = 0; i < doc.overlays.length; i++) {
+          doc.overlays[i].active = false;
+        }
+      }
+      var groundOverlay, color, transparency, overlay;
       var groundNodes = responseXML.getElementsByTagName('GroundOverlay');
       for (i = 0; i < groundNodes.length; i++) {
         node = groundNodes[i];
@@ -186,7 +244,8 @@ geoXML3.parser = function (options) {
             west:  parseFloat(geoXML3.nodeValue(node.getElementsByTagName('west')[0]))
           }
         };
-        if (!!doc.bounds) {
+        if (parserOptions.zoom && !!google.maps) {
+          doc.bounds = doc.bounds || new google.maps.LatLngBounds();
           doc.bounds.union(new google.maps.LatLngBounds(
             new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
             new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east)
@@ -202,11 +261,103 @@ geoXML3.parser = function (options) {
           groundOverlay.opacity = 100;
         }
   
-        // Call the appropriate function to create the overlay
         if (!!parserOptions.createOverlay) {
+          // User-defined overlay handler
           parserOptions.createOverlay(groundOverlay, doc);
         } else {
-          createOverlay(groundOverlay, doc);
+          // Check to see if this overlay was created on a previous load of this document
+          var found = false;
+          if (!!doc) {
+            doc.overlays = doc.overlays || [];
+            if (doc.reload) {
+              overlayBounds = new google.maps.LatLngBounds(
+                new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
+                new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east));
+              for (i = 0; i < doc.overlay.length; i++) {
+                if ((doc.overlays[i].bounds().equals(overlayBounds)) &&
+                    (doc.overlays.url_ === groundOverlay.icon.href)) {
+                  found = doc.overlays[i].active = true;
+                  break;
+                }
+              }
+            } 
+          }
+  
+          if (!found) {
+            // Call the built-in overlay creator
+            overlay = createOverlay(groundOverlay, doc);
+            overlay.active = true;
+          }
+        }
+      }
+      if (!!doc.reload && !!doc.overlays) {
+        for (i = doc.overlays.length - 1; i >= 0 ; i--) {
+          if (!doc.overlays[i].active) {
+            doc.overlays[i].remove();
+            doc.overlays.splice(i, 1);
+          }
+        }
+      }
+
+      // Parse network links
+      var networkLink;
+      var docPath = document.location.pathname.split('/');
+      docPath = docPath.splice(0, docPath.length - 1).join('/');
+      var linkNodes = responseXML.getElementsByTagName('NetworkLink');
+      for (i = 0; i < linkNodes.length; i++) {
+        node = linkNodes[i];
+        
+        // Init the network link object
+        networkLink = {
+          name: geoXML3.nodeValue(node.getElementsByTagName('name')[0]),
+          link: {
+            href:        geoXML3.nodeValue(node.getElementsByTagName('href')[0]),
+            refreshMode:     geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0])
+          }
+        };
+        
+        // Establish the specific refresh mode 
+        if (networkLink.link.refreshMode === '') {
+          networkLink.link.refreshMode = 'onChange';
+        }
+        if (networkLink.link.refreshMode === 'onInterval') {
+          networkLink.link.refreshInterval = parseFloat(geoXML3.nodeValue(node.getElementsByTagName('refreshInterval')[0]));
+          if (isNaN(networkLink.link.refreshInterval)) {
+            networkLink.link.refreshInterval = 0;
+          }
+        } else if (networkLink.link.refreshMode === 'onChange') {
+          networkLink.link.viewRefreshMode = geoXML3.nodeValue(node.getElementsByTagName('viewRefreshMode')[0]);
+          if (networkLink.link.viewRefreshMode === '') {
+            networkLink.link.viewRefreshMode = 'never';
+          }
+          if (networkLink.link.viewRefreshMode === 'onStop') {
+            networkLink.link.viewRefreshTime = geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0]);
+            networkLink.link.viewFormat =      geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0]);
+            if (networkLink.link.viewFormat === '') {
+              networkLink.link.viewFormat = 'BBOX=[bboxWest],[bboxSouth],[bboxEast],[bboxNorth]';
+            }
+          }
+        }
+
+        if (!/^[\/|http]/.test(networkLink.link.href)) {
+          // Fully-qualify the HREF
+          networkLink.link.href = docPath + '/' + networkLink.link.href;
+        }
+
+        // Apply the link
+        if ((networkLink.link.refreshMode === 'onInterval') && 
+            (networkLink.link.refreshInterval > 0)) {
+          // Reload at regular intervals
+          setInterval(parserName + '.parse("' + networkLink.link.href + '")', 
+                      1000 * networkLink.link.refreshInterval); 
+        } else if (networkLink.link.refreshMode === 'onChange') {
+          if (networkLink.link.viewRefreshMode === 'never') {
+            // Load the link just once
+            doc.internals.parser.parse(networkLink.link.href, doc.internals.docSet);
+          } else if (networkLink.link.viewRefreshMode === 'onStop') {
+            // Reload when the map view changes
+            
+          }
         }
       }
 
@@ -214,8 +365,8 @@ geoXML3.parser = function (options) {
         doc.internals.bounds = doc.internals.bounds || new google.maps.LatLngBounds();
         doc.internals.bounds.union(doc.bounds); 
       }
-      if (!!doc.styles || !!doc.markers || !!doc.overlays) {
-        doc.internals.parserOnly = false;
+      if (!!doc.markers || !!doc.overlays) {
+        doc.internals.parseOnly = false;
       }
 
       doc.internals.remaining -= 1;
@@ -230,9 +381,9 @@ geoXML3.parser = function (options) {
           parserOptions.afterParse(doc.internals.docSet);
         }
 
-        if (!doc.internals.parserOnly) {
-          // geoXML3 is not being used only as a real-time parser, so keep the parsed documents around
-          docs.concat(doc.internals.docSet);
+        if (!doc.internals.parseOnly) {
+          // geoXML3 is not being used only as a real-time parser, so keep the processed documents around
+          docs = docs.concat(doc.internals.docSet);
         }
       }
     }
@@ -292,10 +443,13 @@ geoXML3.parser = function (options) {
   
     // Create the marker on the map
     var marker = new google.maps.Marker(markerOptions);
+    if (!!doc) {
+      doc.markers.push(marker);
+    }
 
     // Set up and create the infowindow
     var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
-      content: '<div class="infowindow"><h3>' + placemark.name + 
+      content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
                '</h3><div>' + placemark.description + '</div></div>',
       pixelOffset: new google.maps.Size(0, 2)
     });
@@ -311,11 +465,6 @@ geoXML3.parser = function (options) {
       }
       this.infoWindow.open(this.map, this);
     });
-    
-    if (!!doc) {
-      doc.markers = doc.markers || [];
-      doc.markers.push(marker);
-    }
 
     return marker;
   };
@@ -339,7 +488,7 @@ geoXML3.parser = function (options) {
       doc.overlays.push(overlay);
     }
 
-    return 
+    return overlay;
   };
 
   return {
