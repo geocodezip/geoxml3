@@ -47,17 +47,17 @@ geoXML3.parser = function (options) {
   
     var thisDoc, i;
     var oldLength = docs.length;
-  
+
     if (typeof urls === 'string') {
       // Single KML document
-      docs.push({url: urls remaining: 1});
-    } else {
-      // Array of KML documents
-      for (i = 0; i < urls.length; i++) {
-        docs.push({url: urls[i], remaining: urls.length});
-      }
+      urls = [urls];
     }
-  
+
+    var counter = {remaining: urls.length}; 
+    for (i = 0; i < urls.length; i++) {
+      docs.push({url: urls[i], counter: counter});
+    }
+
     for (i = oldLength; i < docs.length; i++) {
       thisDoc = docs[i];
       thisDoc.parser = this;
@@ -220,8 +220,8 @@ geoXML3.parser = function (options) {
         }
       }
 
-      doc.remaining -= 1;
-      if (!doc.remaining) {
+      doc.counter.remaining -= 1;
+      if (doc.counter.remaining === 0) {
         // We're done processing this set of KML documents
 
         // Options that get invoked after the parsing
