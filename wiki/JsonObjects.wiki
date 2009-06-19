@@ -25,7 +25,7 @@ Created from KML `<Style>` elements. Structure:
   shadow: google.maps.MarkerImage  // Created as a "best guess" of the correct shadow image for icon
 }
 }}}
-Note: icon and shadow are only created if parser.processStyles() is run, either automatically or manually (see above). These can both be overridden before parser.createMarker() is called if necessary.
+Note: icon and shadow are only created if parser.processStyles() is run, either automatically or manually (see parser methods in ParserReference). These can both be overridden before parser.createMarker() is called if necessary.
 
 ==`placemark`==
 Created from KML `<Placemark>` elements. Structure:
