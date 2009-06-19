@@ -35,7 +35,8 @@ Created from KML `<Placemark>` elements. Structure:
   description: String,
   styleURL:    String
   style:       Object,  // When processStyles has been run, contains the associated style object
-  point = {             // The KML Point element is parsed into these fields    lat: Number, 
+  point = {             // The KML Point element is parsed into these fields
+    lat: Number, 
     lng: Number, 
     alt: Number
   }
