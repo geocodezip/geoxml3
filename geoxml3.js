@@ -1,5 +1,5 @@
 /*
-    geoXML3.js
+    geoxml3.js
 
     Renders KML on the Google Maps JavaScript API Version 3 
     http://code.google.com/p/geoxml3/
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Extend the global String with a method to remove leading and trailing whitespace
+// Extend the global String object with a method to remove leading and trailing whitespace
 if (!String.prototype.trim) {
   String.prototype.trim = function () {
     return this.replace(/^\s+|\s+$/g, '');
@@ -90,7 +90,7 @@ geoXML3.parser = function (options) {
     // Hide the map objects associated with a document 
     var i;
     for (i = 0; i < doc.markers.length; i++) {
-      this.markers[i].set_visible(false);
+      this.markers[i].setVisible(false);
     }
     for (i = 0; i < doc.overlays.length; i++) {
       doc.overlays[i].setOpacity(0);
@@ -101,7 +101,7 @@ geoXML3.parser = function (options) {
     // Show the map objects associated with a document 
     var i;
     for (i = 0; i < doc.markers.length; i++) {
-      doc.markers[i].set_visible(true);
+      doc.markers[i].setVisible(true);
     }
     for (i = 0; i < doc.overlays.length; i++) {
       doc.overlays[i].setOpacity(doc.overlays[i].percentOpacity_);
@@ -193,7 +193,7 @@ geoXML3.parser = function (options) {
               doc.markers = doc.markers || [];
               if (doc.reload) {
                 for (i = 0; i < doc.markers.length; i++) {
-                  if (doc.markers[i].get_position().equals(markerOptions.position)) {
+                  if (doc.markers[i].getPosition().equals(markerOptions.position)) {
                     found = doc.markers[i].active = true;
                     break;
                   }
@@ -215,7 +215,7 @@ geoXML3.parser = function (options) {
             if (!!doc.markers[i].infoWindow) {
               doc.markers[i].infoWindow.close();
             }
-            doc.markers[i].set_map(null);
+            doc.markers[i].setMap(null);
             doc.markers.splice(i, 1);
           }
         }
@@ -516,7 +516,7 @@ geoXML3.log = function(msg) {
   }
 };
 
-// Combine two options objects, a set of default values and a set of override values 
+// Combine two options objects: a set of default values and a set of override values 
 geoXML3.combineOptions = function (overrides, defaults) {
   var result = {};
   if (!!overrides) {
@@ -536,7 +536,7 @@ geoXML3.combineOptions = function (overrides, defaults) {
   return result;
 };
 
-// Retrieve a text document from url and pass it to callback as a string
+// Retrieve an XML document from url and pass it to callback as a DOM document
 geoXML3.fetchers = [];
 geoXML3.fetchXML = function (url, callback) {
   function timeoutHandler() {
