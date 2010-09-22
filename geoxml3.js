@@ -549,6 +549,29 @@ geoXML3.combineOptions = function (overrides, defaults) {
 
 // Retrieve an XML document from url and pass it to callback as a DOM document
 geoXML3.fetchers = [];
+
+// parse text to XML doc
+/**
+ * Parses the given XML string and returns the parsed document in a
+ * DOM data structure. This function will return an empty DOM node if
+ * XML parsing is not supported in this browser.
+ * @param {string} str XML string.
+ * @return {Element|Document} DOM.
+ */
+geoXML3.xmlParse = function (str) {
+  if (typeof ActiveXObject != 'undefined' && typeof GetObject != 'undefined') {
+    var doc = new ActiveXObject('Microsoft.XMLDOM');
+    doc.loadXML(str);
+    return doc;
+  }
+
+  if (typeof DOMParser != 'undefined') {
+    return (new DOMParser()).parseFromString(str, 'text/xml');
+  }
+
+  return createElement('div', null);
+}
+
 geoXML3.fetchXML = function (url, callback) {
   function timeoutHandler() {
     callback();
@@ -573,20 +596,20 @@ geoXML3.fetchXML = function (url, callback) {
     xhrFetcher.onreadystatechange = function () {
       if (xhrFetcher.readyState === 4) {
         // Retrieval complete
-        if (!!xhrFetcher.timeout)
-          clearTimeout(xhrFetcher.timeout);
+        if (!!geoXML3.xhrtimeout)
+          clearTimeout(geoXML3.xhrtimeout);
         if (xhrFetcher.status >= 400) {
           geoXML3.log('HTTP error ' + xhrFetcher.status + ' retrieving ' + url);
           callback();
         } else {
           // Returned successfully
-          callback(xhrFetcher.responseXML);
+	    callback(geoXML3.xmlParse(xhrFetcher.responseText));
         }
         // We're done with this fetcher object
         geoXML3.fetchers.push(xhrFetcher);
       }
     };
-    xhrFetcher.timeout = setTimeout(timeoutHandler, 60000);
+    geoXML3.xhrtimeout = setTimeout(timeoutHandler, 60000);
     xhrFetcher.send(null);
   }
 };
