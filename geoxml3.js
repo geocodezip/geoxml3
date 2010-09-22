@@ -87,24 +87,35 @@ geoXML3.parser = function (options) {
   };
 
   var hideDocument = function (doc) {
+    if (!doc) doc = docs[0];
     // Hide the map objects associated with a document 
     var i;
-    for (i = 0; i < doc.markers.length; i++) {
-      this.markers[i].setVisible(false);
+    if (!!doc.markers) {
+      for (i = 0; i < doc.markers.length; i++) {
+        if(!!doc.markers[i].infoWindow) doc.markers[i].infoWindow.close();
+        doc.markers[i].setVisible(false);
+      }
     }
-    for (i = 0; i < doc.overlays.length; i++) {
+    if (!!doc.overlays) {
+      for (i = 0; i < doc.overlays.length; i++) {
       doc.overlays[i].setOpacity(0);
+      }
     }
   };
   
   var showDocument = function (doc) {
+    if (!doc) doc = docs[0];
     // Show the map objects associated with a document 
     var i;
-    for (i = 0; i < doc.markers.length; i++) {
-      doc.markers[i].setVisible(true);
+    if (!!doc.markers) {
+      for (i = 0; i < doc.markers.length; i++) {
+        doc.markers[i].setVisible(true);
+      }
     }
-    for (i = 0; i < doc.overlays.length; i++) {
-      doc.overlays[i].setOpacity(doc.overlays[i].percentOpacity_);
+    if (!!doc.overlays) {
+      for (i = 0; i < doc.overlays.length; i++) {
+        doc.overlays[i].setOpacity(doc.overlays[i].percentOpacity_);
+      }
     }
   };
 
