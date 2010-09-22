@@ -26,14 +26,14 @@ function ProjectedOverlay(map, imageUrl, bounds, opts)
  this.id_ = opts.id || this.url_ ;				// Added to allow for multiple images
  this.percentOpacity_ = opts.percentOpacity || 50 ;
 
- this.set_map(map);
+ this.setMap(map);
 }
 
 ProjectedOverlay.prototype = new google.maps.OverlayView();
 
 ProjectedOverlay.prototype.createElement = function()
 {
- var panes = this.get_panes() ;
+ var panes = this.getPanes() ;
  var div = this.div_ ;
 
  if (!div)
@@ -57,7 +57,7 @@ ProjectedOverlay.prototype.remove = function()
 {
  if (this.div_) 
  {
-  this.set_map(null);
+  this.setMap(null);
   this.div_.parentNode.removeChild(this.div_);
   this.div_ = null;
  }
@@ -90,18 +90,18 @@ ProjectedOverlay.prototype.draw = function(firstTime)
 
  // Do the rest only if the zoom has changed...
  
- if ( this.lastZoom_ == this.map_.get_zoom() )
+ if ( this.lastZoom_ == this.map_.getZoom() )
  {
   return ;
  }
 
- this.lastZoom_ = this.map_.get_zoom() ;
+ this.lastZoom_ = this.map_.getZoom() ;
 
  var url = this.url_ ;
 
  if ( this.addZ_ )
  {
-  url += this.addZ_ + this.map_.get_zoom() ;
+  url += this.addZ_ + this.map_.getZoom() ;
  }
 
  this.div_.innerHTML = '<img src="' + url + '"  width=' + this.div_.style.width + ' height=' + this.div_.style.height + ' >' ;
