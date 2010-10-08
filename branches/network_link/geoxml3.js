@@ -189,9 +189,10 @@ geoXML3.parser = function (options) {
             lng: parseFloat(coords[0]), 
             alt: parseFloat(coords[2])
           };
+          placemark.latlng = new google.maps.LatLng(placemark.point.lat, placemark.point.lng);
           if (parserOptions.zoom && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
-            doc.bounds.extend(new google.maps.LatLng(placemark.point.lat, placemark.point.lng));
+            doc.bounds.extend(placemark.latlng);
           }
 
           if (!!parserOptions.createMarker) {
@@ -203,9 +204,9 @@ geoXML3.parser = function (options) {
             if (!!doc) {
               doc.markers = doc.markers || [];
               if (doc.reload) {
-                for (i = 0; i < doc.markers.length; i++) {
-                  if (doc.markers[i].getPosition().equals(markerOptions.position)) {
-                    found = doc.markers[i].active = true;
+                for (var j = 0; j < doc.markers.length; j++) {
+                  if (doc.markers[j].getPosition().equals(placemark.latlng)) {
+                    found = doc.markers[j].active = true;
                     break;
                   }
                 }
