@@ -137,10 +137,23 @@ geoXML3.parser = function (options) {
     }
   };
 
-function processPlacemarkCoords(node) {
-  var coordNodes = node.getElementsByTagName('coordinates')
-
+function processPlacemarkCoords(nodes) {
+if (!nodes.length) {
+   nodes = [nodes];
+} 
+var coordNodes = null;
   var coordListA = [];
+for (var node=0;node<nodes.length;node++) {
+    coordNodes = nodes[node].getElementsByTagName('coordinates')
+  if (!coordNodes) {
+    if (coordListA.length > 0) {
+      break;
+    } else {
+      // alert("error in processPlacemarkCoords(node), empty return value");
+      return [{coordinates: []}];
+    }
+  }
+
   for (var i=0; i<coordNodes.length;i++) { 
     var coords = geoXML3.nodeValue(coordNodes[i]).trim();
     coords = coords.replace(/,\s+/g, ',');
@@ -155,9 +168,9 @@ function processPlacemarkCoords(node) {
         alt: parseFloat(coords[2])
       });
     }
-    coordListA.push(coordList);
+    coordListA.push({coordinates: coordList});
   }
-
+}
   if (coordListA.length > 1)
     return coordListA;
   else 
@@ -276,7 +289,7 @@ function processPlacemarkCoords(node) {
                var OBInode=polygonNodes[pg].getElementsByTagName("outerBoundaryIs")[0];
                var IBInodes=polygonNodes[pg].getElementsByTagName("innerBoundaryIs");
                placemark.Polygon[pg].outerBoundaryIs.coordinates = processPlacemarkCoords(OBInode);
-               if (IBInodes && IBInodes.length && (IBInodes.length > 1))
+               if (IBInodes && IBInodes.length && (IBInodes.length > 0))
                   placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(IBInodes);
             }
             coordList = placemark.Polygon[0].outerBoundaryIs.coordinates;
@@ -570,7 +583,6 @@ var randomColor = function(){
   var colorNum = Math.random()*8388607.0;  // 8388607 = Math.pow(2,23)-1
   var colorStr = colorNum.toString(16);
   color += colorStr.substring(0,colorStr.indexOf('.'));
-  // alert("random color="+color);
   return color;
 };
 
@@ -923,9 +935,16 @@ geoXML3.fetchXML = function (url, callback) {
 
 //nodeValue: Extract the text value of a DOM node, with leading and trailing whitespace trimmed
 geoXML3.nodeValue = function(node) {
+  var retStr="";
   if (!node) {
     return '';
-  } else {
-    return (node.innerText || node.text || node.textContent).trim();
   }
+   if(node.nodeType==3||node.nodeType==4||node.nodeType==2){
+      retStr+=node.nodeValue;
+   }else if(node.nodeType==1||node.nodeType==9||node.nodeType==11){
+      for(var i=0;i<node.childNodes.length;++i){
+         retStr+=arguments.callee(node.childNodes[i]);
+      }
+   }
+   return retStr;
 };
