@@ -294,21 +294,13 @@ for (var node=0;node<nodes.length;node++) {
             }
             coordList = placemark.Polygon[0].outerBoundaryIs.coordinates;
             break;
+
           case "LineString":
-            placemark.LineString = [];
             pathLength = 0;
-            coordList = processPlacemarkCoords(node);
-            if (coordList[0] instanceof Array) {
-               for (var i=0;i<coordList.length;i++) {
-                 placemark.LineString.push({coordinates: coordList[i]});
-                 pathLength += placemark.LineString[i].length;
-               }            // Polyline
-            } else {
-              placemark.LineString.push({coordinates: coordList});
-              pathLength += placemark.LineString[0].length;
-            }
-           
+            placemark.LineString = processPlacemarkCoords(node);
+            pathLength += placemark.LineString[0].length;
             break;
+
           default:
             break;
       }
