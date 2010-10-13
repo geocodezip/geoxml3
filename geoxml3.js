@@ -734,7 +734,8 @@ var createPolygon = function(placemark, doc) {
   var pathsLength = 0;
     var paths = [];
     for (var polygonPart=0;polygonPart<placemark.Polygon.length;polygonPart++) {
-      var coords = placemark.Polygon[polygonPart].outerBoundaryIs[0].coordinates;
+    for (var j=0; j<placemark.Polygon[polygonPart].outerBoundaryIs.length; j++) {
+      var coords = placemark.Polygon[polygonPart].outerBoundaryIs[j].coordinates;
       var path = [];
       for (var i=0;i<coords.length;i++) {
         var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
@@ -743,6 +744,7 @@ var createPolygon = function(placemark, doc) {
       }
       paths.push(path);
       pathsLength += path.length;
+    }
     for (var j=0; j<placemark.Polygon[polygonPart].innerBoundaryIs.length; j++) {
       var coords = placemark.Polygon[polygonPart].innerBoundaryIs[j].coordinates;
       var path = [];
