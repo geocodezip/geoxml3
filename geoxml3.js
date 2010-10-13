@@ -70,7 +70,7 @@ geoXML3.parser = function (options) {
           thisDoc.url       = urls[i];
           thisDoc.internals = internals;
           thisDoc.reload    = true;
-          this.docs.splice(j, 1);
+          docs.splice(j, 1);
           break;
         }
       }
@@ -137,31 +137,27 @@ geoXML3.parser = function (options) {
     }
   };
 
-function processPlacemarkCoords(nodes) {
-if (!nodes.length) {
-   nodes = [nodes];
-} 
-var coordNodes = null;
-  var coordListA = [];
-for (var node=0;node<nodes.length;node++) {
-    coordNodes = nodes[node].getElementsByTagName('coordinates')
+function processPlacemarkCoords(node, tag) {
+   var parent = node.getElementsByTagName(tag);
+var coordListA = [];
+  for (var i=0; i<parent.length; i++) {
+  var coordNodes = parent[i].getElementsByTagName('coordinates')
   if (!coordNodes) {
     if (coordListA.length > 0) {
       break;
     } else {
-      // alert("error in processPlacemarkCoords(node), empty return value");
       return [{coordinates: []}];
     }
   }
 
-  for (var i=0; i<coordNodes.length;i++) { 
-    var coords = geoXML3.nodeValue(coordNodes[i]).trim();
+  for (var j=0; j<coordNodes.length;j++) { 
+    var coords = geoXML3.nodeValue(coordNodes[j]).trim();
     coords = coords.replace(/,\s+/g, ',');
     var path = coords.split(/\s+/g);
     var pathLength = path.length;
     var coordList = [];
-    for (j = 0; j < pathLength; j++) {
-      coords = path[j].split(',');
+    for (var k = 0; k < pathLength; k++) {
+      coords = path[k].split(',');
       coordList.push({
         lat: parseFloat(coords[1]), 
         lng: parseFloat(coords[0]), 
@@ -171,10 +167,7 @@ for (var node=0;node<nodes.length;node++) {
     coordListA.push({coordinates: coordList});
   }
 }
-  if (coordListA.length > 1)
-    return coordListA;
-  else 
-    return coordList;
+  return coordListA;
 }
 
   var render = function (responseXML, doc) {
@@ -269,8 +262,8 @@ for (var node=0;node<nodes.length;node++) {
         // What sort of placemark?
         switch(Geometry) {
           case "Point":
-            placemark.Point = { coordinates: processPlacemarkCoords(node)[0] }; 
-            placemark.latlng = new google.maps.LatLng(placemark.Point.coordinates.lat, placemark.Point.coordinates.lng);
+            placemark.Point = processPlacemarkCoords(node, "Point")[0]; 
+            placemark.latlng = new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng);
             pathLength = 1;
             break;
           case "LinearRing":
@@ -286,19 +279,15 @@ for (var node=0;node<nodes.length;node++) {
                  outerBoundaryIs: {coordinates: []},
                  innerBoundaryIs: [{coordinates: []}]
                }
-               var OBInode=polygonNodes[pg].getElementsByTagName("outerBoundaryIs")[0];
-               var IBInodes=polygonNodes[pg].getElementsByTagName("innerBoundaryIs");
-               placemark.Polygon[pg].outerBoundaryIs.coordinates = processPlacemarkCoords(OBInode);
-               if (IBInodes && IBInodes.length && (IBInodes.length > 0))
-                  placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(IBInodes);
+               placemark.Polygon[pg].outerBoundaryIs = processPlacemarkCoords(node, "outerBoundaryIs");
+               placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(node, "innerBoundaryIs");
             }
-            coordList = placemark.Polygon[0].outerBoundaryIs.coordinates;
+            coordList = placemark.Polygon[0].outerBoundaryIs;
             break;
 
           case "LineString":
             pathLength = 0;
-            placemark.LineString = processPlacemarkCoords(node);
-            pathLength += placemark.LineString[0].length;
+            placemark.LineString = processPlacemarkCoords(node,"LineString");
             break;
 
           default:
@@ -306,7 +295,7 @@ for (var node=0;node<nodes.length;node++) {
       }
       doc.placemarks.push(placemark);
       
-      if (pathLength === 1) {
+      if (Geometry == "Point") {
           if (parserOptions.zoom && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
@@ -548,7 +537,9 @@ for (var node=0;node<nodes.length;node++) {
 
         if (!doc.internals.parseOnly) {
           // geoXML3 is not being used only as a real-time parser, so keep the processed documents around
-          docs = docs.concat(doc.internals.docSet);
+            for (var i=(doc.internals.docSet.length-1);i>=0;i--) {
+              docs.push(doc.internals.docSet[i]);
+            }
         }
       }
   };
@@ -624,7 +615,7 @@ var randomColor = function(){
     // Load basic marker properties
     var markerOptions = geoXML3.combineOptions(parserOptions.markerOptions, {
       map:      parserOptions.map,
-    position: new google.maps.LatLng(placemark.Point.coordinates.lat, placemark.Point.coordinates.lng),
+    position: new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng),
       title:    placemark.name,
     zIndex:   Math.round(-placemark.Point.coordinates.lat * 100000),
       icon:     placemark.style.icon,
@@ -741,9 +732,9 @@ var randomColor = function(){
 var createPolygon = function(placemark, doc) {
   var bounds = new google.maps.LatLngBounds();
   var pathsLength = 0;
-    for (var polygonPart=0;polygonPart<placemark.Polygon.length;polygonPart++) {
     var paths = [];
-      var coords = placemark.Polygon[polygonPart].outerBoundaryIs.coordinates;
+    for (var polygonPart=0;polygonPart<placemark.Polygon.length;polygonPart++) {
+      var coords = placemark.Polygon[polygonPart].outerBoundaryIs[0].coordinates;
       var path = [];
       for (var i=0;i<coords.length;i++) {
         var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
