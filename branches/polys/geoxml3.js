@@ -360,10 +360,10 @@ var coordListA = [];
               poly = createPolyline(placemark,doc);
               poly.active = true;
             }
-          }
           if (parserOptions.zoom && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.union(poly.bounds);
+          }
           }
           
       } // placemark loop
