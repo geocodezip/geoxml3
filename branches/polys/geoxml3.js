@@ -200,20 +200,21 @@ var coordListA = [];
       thisNode = nodes[i];
       styleID    = '#' + thisNode.getAttribute('id');
       styleNodes = thisNode.getElementsByTagName('Icon');
-      if (!!styleNodes.length) {
+      if (!!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID] = {
-          href: nodeValue(styleNodes[0].getElementsByTagName('href')[0])
+          href: nodeValue(styleNodes[0].getElementsByTagName('href')[0]),
+          scale: nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
         };
+        if (!isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
       }
       styleNodes = thisNode.getElementsByTagName('LineStyle');
-      if (!!styleNodes.length) {
-        styles[styleID] = {
-          color: nodeValue(styleNodes[0].getElementsByTagName('color')[0]),
-          width: nodeValue(styleNodes[0].getElementsByTagName('width')[0])
-        };
+      if (!!styleNodes.length && (styleNodes.length > 0)) {
+        styles[styleID] = styles[styleID] || {};
+        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]),
+        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0])
       }
       styleNodes = thisNode.getElementsByTagName('PolyStyle');
-      if (!!styleNodes.length) {
+      if (!!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID] = styles[styleID] || {};
         styles[styleID].outline   = !!nodeValue(styleNodes[0].getElementsByTagName('outline')[0]);
         styles[styleID].fill      = !!nodeValue(styleNodes[0].getElementsByTagName('fill')[0]);
@@ -590,9 +591,11 @@ var randomColor = function(){
         // Init the style object with a standard KML icon
         doc.styles[styleID].icon =  new google.maps.MarkerImage(
           doc.styles[styleID].href,
-          new google.maps.Size(32, 32),
+          new google.maps.Size(32*doc.styles[styleID].scale, 32*doc.styles[styleID].scale),
           new google.maps.Point(0, 0),
-          new google.maps.Point(16, 12)
+          new google.maps.Point(16*doc.styles[styleID].scale, 12*doc.styles[styleID].scale),
+          new google.maps.Size(32,32)
+
         );
 
         // Look for a predictable shadow
