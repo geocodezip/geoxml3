@@ -633,7 +633,7 @@ var randomColor = function(){
       map:      parserOptions.map,
     position: new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng),
       title:    placemark.name,
-      zIndex:   Math.round(placemark.Point.coordinates.lat * -100000)<<5,
+      zIndex:   Math.round(placemark.Point.coordinates[0].lat * -100000)<<5,
       icon:     placemark.style.icon,
       shadow:   placemark.style.shadow 
     });
