@@ -248,14 +248,18 @@ var coordListA = [];
           placemark.description = ['<a href="', placemark.description, '">', placemark.description, '</a>'].join('');
         }
 
-        var Geometry = node.getElementsByTagName('coordinates');
-	if (!!Geometry && (Geometry.length > 0) && Geometry[0].parentNode && Geometry[0].parentNode.nodeName) {
-          Geometry = node.getElementsByTagName('coordinates')[0].parentNode.nodeName;
-	} else {
-	  Geometry = null;
-	  continue;
-	} 
+        // process MultiGeometry
+        var GeometryNodes = node.getElementsByTagName('coordinates');
+        var Geometry = null;
+	if (!!GeometryNodes && (GeometryNodes.length > 0)) {
+          for (var gn=0;gn<GeometryNodes.length;gn++) {
+             if (!GeometryNodes[gn].parentNode ||
+                 !GeometryNodes[gn].parentNode.nodeName) {
 
+             } else { // parentNode.nodeName exists
+               var GeometryPN = GeometryNodes[gn].parentNode;
+               Geometry = GeometryPN.nodeName;
+       
         // Extract the coordinates
         // TODO: support MultiGeometry (see dateline for example)
         // TODO: support inner boundaries
@@ -270,17 +274,18 @@ var coordListA = [];
             // Polygon/line
             polygonNodes = node.getElementsByTagName('Polygon');
             // Polygon
-            placemark.Polygon = [{
-              outerBoundaryIs: {coordinates: []},
-              innerBoundaryIs: [{coordinates: []}]
-            }];
+            if (!placemark.Polygon)
+              placemark.Polygon = [{
+                outerBoundaryIs: {coordinates: []},
+                innerBoundaryIs: [{coordinates: []}]
+              }];
             for (var pg=0;pg<polygonNodes.length;pg++) {
                placemark.Polygon[pg] = {
                  outerBoundaryIs: {coordinates: []},
                  innerBoundaryIs: [{coordinates: []}]
                }
-               placemark.Polygon[pg].outerBoundaryIs = processPlacemarkCoords(node, "outerBoundaryIs");
-               placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(node, "innerBoundaryIs");
+               placemark.Polygon[pg].outerBoundaryIs = processPlacemarkCoords(polygonNodes[pg], "outerBoundaryIs");
+               placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(polygonNodes[pg], "innerBoundaryIs");
             }
             coordList = placemark.Polygon[0].outerBoundaryIs;
             break;
@@ -293,9 +298,12 @@ var coordListA = [];
           default:
             break;
       }
+      } // parentNode.nodeName exists
+      } // GeometryNodes loop
+      } // if GeometryNodes 
       doc.placemarks.push(placemark);
       
-      if (Geometry == "Point") {
+      if (placemark.Point) {
           if (parserOptions.zoom && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
@@ -325,8 +333,8 @@ var coordListA = [];
               marker.active = true;
             }
           }
-        } else { // poly test 2
-          if (!!polygonNodes) { // polygon
+        }
+        if (placemark.Polygon) { // poly test 2
             if (!!doc) {
               doc.gpolygons = doc.gpolygons || [];
             }
@@ -339,7 +347,8 @@ var coordListA = [];
               poly = createPolygon(placemark,doc);
               poly.active = true;
             }
-          } else { // polyline
+          } 
+          if (placemark.LineString) { // polyline
             if (!!doc) {
               doc.gpolylines = doc.gpolylines || [];
             }
@@ -357,9 +366,8 @@ var coordListA = [];
             doc.bounds.union(poly.bounds);
           }
           
-        }
-      }
-}
+      } // placemark loop
+
       if (!!doc.reload && !!doc.markers) {
         for (i = doc.markers.length - 1; i >= 0 ; i--) {
           if (!doc.markers[i].active) {
@@ -515,6 +523,7 @@ var coordListA = [];
           }
         }
       }
+}
 
       if (!!doc.bounds) {
         doc.internals.bounds = doc.internals.bounds || new google.maps.LatLngBounds();
@@ -717,13 +726,6 @@ var randomColor = function(){
       if (e && e.latLng) this.infoWindow.setPosition(e.latLng);
       this.infoWindow.open(this.map);
     });
-/*
-  if (this.opts.sidebarid) {
-    var n = this.gpolylines.length-1;
-    var blob = '&nbsp;&nbsp;<span style=";border-left:'+width+'px solid '+color+';">&nbsp;</span> ';
-    this.side_bar_list.push (name + "$$$polyline$$$" + n +"$$$" + blob );
-  }
-*/
   return p;
 }
 
@@ -794,13 +796,6 @@ var createPolygon = function(placemark, doc) {
       if (e && e.latLng) this.infoWindow.setPosition(e.latLng);
       this.infoWindow.open(this.map);
     });
-/*
-  if (this.opts.sidebarid) {
-    var n = this.gpolylines.length-1;
-    var blob = '&nbsp;&nbsp;<span style=";border-left:'+width+'px solid '+color+';">&nbsp;</span> ';
-    this.side_bar_list.push (name + "$$$polyline$$$" + n +"$$$" + blob );
-  }
-*/
   return p;
 }
 
