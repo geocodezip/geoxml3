@@ -347,6 +347,10 @@ var coordListA = [];
               poly = createPolygon(placemark,doc);
               poly.active = true;
             }
+          if (parserOptions.zoom && !!google.maps) {
+            doc.bounds = doc.bounds || new google.maps.LatLngBounds();
+            doc.bounds.union(poly.bounds);
+          }
           } 
           if (placemark.LineString) { // polyline
             if (!!doc) {
