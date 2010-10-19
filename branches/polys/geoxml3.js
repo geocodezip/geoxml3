@@ -701,6 +701,8 @@ var randomColor = function(){
         bounds.extend(pt);
       }
     }
+      // point to open the infowindow if triggered 
+      var point = path[path.length/2];
       // Load basic polyline properties
       var kmlStrokeColor = kmlColor(placemark.style.color);
       var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
@@ -730,7 +732,11 @@ var randomColor = function(){
         }
         lastPlacemark = this;
       }
-      if (e && e.latLng) this.infoWindow.setPosition(e.latLng);
+      if (e && e.latLng) {
+        this.infoWindow.setPosition(e.latLng);
+      } else {
+        this.infoWindow.setPosition(point);
+      }
       this.infoWindow.open(this.map);
     });
   return p;
@@ -767,7 +773,7 @@ var createPolygon = function(placemark, doc) {
     }
   }
 
-      // Load basic polyline properties
+      // Load basic polygon properties
       var kmlStrokeColor = kmlColor(placemark.style.color);
       var kmlFillColor = kmlColor(placemark.style.fillcolor);
       var polyOptions = geoXML3.combineOptions(parserOptions.polygonOptions, {
@@ -800,7 +806,11 @@ var createPolygon = function(placemark, doc) {
         }
         lastPlacemark = this;
       }
-      if (e && e.latLng) this.infoWindow.setPosition(e.latLng);
+      if (e && e.latLng) {
+        this.infoWindow.setPosition(e.latLng);
+      } else {
+        this.infoWindow.setPosition(p.bounds.getCenter());
+      }
       this.infoWindow.open(this.map);
     });
   return p;
