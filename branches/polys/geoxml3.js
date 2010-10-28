@@ -41,6 +41,8 @@ geoXML3.parser = function (options) {
   var docs = []; // Individual KML documents
   var lastPlacemark;
   var parserName;
+  if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
+    parserOptions.infoWindow = new google.maps.InfoWindow();
   // Private methods
 
   var parse = function (urls, docSet) {
@@ -263,8 +265,6 @@ var coordListA = [];
                Geometry = GeometryPN.nodeName;
        
         // Extract the coordinates
-        // TODO: support MultiGeometry (see dateline for example)
-        // TODO: support inner boundaries
         // What sort of placemark?
         switch(Geometry) {
           case "Point":
@@ -303,6 +303,8 @@ var coordListA = [];
       } // parentNode.nodeName exists
       } // GeometryNodes loop
       } // if GeometryNodes 
+      // call the custom placemark parse function if it is defined
+      if (!!parserOptions.pmParseFn) parserOptions.pmParseFn(node, placemark);
       doc.placemarks.push(placemark);
       
       if (placemark.Point) {
@@ -632,7 +634,7 @@ var randomColor = function(){
     // Load basic marker properties
     var markerOptions = geoXML3.combineOptions(parserOptions.markerOptions, {
       map:      parserOptions.map,
-    position: new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng),
+      position: new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng),
       title:    placemark.name,
       zIndex:   Math.round(placemark.Point.coordinates[0].lat * -100000)<<5,
       icon:     placemark.style.icon,
@@ -651,16 +653,14 @@ var randomColor = function(){
                '</h3><div>' + placemark.description + '</div></div>',
       pixelOffset: new google.maps.Size(0, 2)
     });
-    marker.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
-
+    if (parserOptions.infoWindow) {
+      marker.infoWindow = parserOptions.infoWindow;
+    } else {
+      marker.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
+    }
     // Infowindow-opening event handler
     google.maps.event.addListener(marker, 'click', function() {
-      if (!!parserOptions.singleInfoWindow) {
-        if (!!lastPlacemark && !!lastPlacemark.infoWindow) {
-          lastPlacemark.infoWindow.close();
-        }
-        lastPlacemark = this;
-      }
+      marker.infoWindow.setOptions(infoWindowOptions);
       this.infoWindow.open(this.map, this);
     });
 
@@ -721,18 +721,14 @@ var randomColor = function(){
       });
     var p = new google.maps.Polyline(polyOptions);
     p.bounds = bounds;
-    p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
-    if (!!doc) {
-      doc.gpolylines.push(p);
+    if (parserOptions.infoWindow) {
+      p.infoWindow = parserOptions.infoWindow;
+    } else {
+      p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
     }
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
-      if (!!parserOptions.singleInfoWindow) {
-        if (!!lastPlacemark && !!lastPlacemark.infoWindow) {
-          lastPlacemark.infoWindow.close();
-        }
-        lastPlacemark = this;
-      }
+      p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
         this.infoWindow.setPosition(e.latLng);
       } else {
@@ -740,6 +736,7 @@ var randomColor = function(){
       }
       this.infoWindow.open(this.map);
     });
+    if (!!doc) doc.gpolylines.push(p);
   return p;
 }
 
@@ -795,18 +792,14 @@ var createPolygon = function(placemark, doc) {
       });
     var p = new google.maps.Polygon(polyOptions);
     p.bounds = bounds;
-    p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
-    if (!!doc) {
-      doc.gpolygons.push(p);
+    if (parserOptions.infoWindow) {
+      p.infoWindow = parserOptions.infoWindow;
+    } else {
+      p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
     }
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
-      if (!!parserOptions.singleInfoWindow) {
-        if (!!lastPlacemark && !!lastPlacemark.infoWindow) {
-          lastPlacemark.infoWindow.close();
-        }
-        lastPlacemark = this;
-      }
+      p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
         this.infoWindow.setPosition(e.latLng);
       } else {
@@ -814,6 +807,7 @@ var createPolygon = function(placemark, doc) {
       }
       this.infoWindow.open(this.map);
     });
+    if (!!doc) doc.gpolygons.push(p);
   return p;
 }
 
