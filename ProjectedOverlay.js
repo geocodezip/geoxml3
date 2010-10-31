@@ -57,7 +57,6 @@ ProjectedOverlay.prototype.remove = function()
 {
  if (this.div_) 
  {
-  this.setMap(null);
   this.div_.parentNode.removeChild(this.div_);
   this.div_ = null;
  }
