@@ -663,7 +663,7 @@ var randomColor = function(){
       marker.infoWindow.setOptions(infoWindowOptions);
       this.infoWindow.open(this.map, this);
     });
-
+    placemark.marker = marker;
     return marker;
   };
   
@@ -703,7 +703,7 @@ var randomColor = function(){
       }
     }
       // point to open the infowindow if triggered 
-      var point = path[path.length/2];
+      var point = path[Math.floor(path.length/2)];
       // Load basic polyline properties
       var kmlStrokeColor = kmlColor(placemark.style.color);
       var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
@@ -730,13 +730,14 @@ var randomColor = function(){
     google.maps.event.addListener(p, 'click', function(e) {
       p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
-        this.infoWindow.setPosition(e.latLng);
+        p.infoWindow.setPosition(e.latLng);
       } else {
-        this.infoWindow.setPosition(point);
+        p.infoWindow.setPosition(point);
       }
-      this.infoWindow.open(this.map);
+      p.infoWindow.open(this.map);
     });
     if (!!doc) doc.gpolylines.push(p);
+  placemark.polyline = p;
   return p;
 }
 
@@ -801,13 +802,14 @@ var createPolygon = function(placemark, doc) {
     google.maps.event.addListener(p, 'click', function(e) {
       p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
-        this.infoWindow.setPosition(e.latLng);
+        p.infoWindow.setPosition(e.latLng);
       } else {
-        this.infoWindow.setPosition(p.bounds.getCenter());
+        p.infoWindow.setPosition(p.bounds.getCenter());
       }
-      this.infoWindow.open(this.map);
+      p.infoWindow.open(this.map);
     });
     if (!!doc) doc.gpolygons.push(p);
+  placemark.polygon = p;
   return p;
 }
 
