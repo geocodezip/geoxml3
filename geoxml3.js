@@ -140,6 +140,47 @@ geoXML3.parser = function (options) {
     }
   };
 
+function processStyle(thisNode, styles, styleID) {
+      var nodeValue  = geoXML3.nodeValue;
+      var defaultStyle = {
+        color: "ff000000", // black
+        width: 1,
+        fill: true,
+        outline: true,
+        fillcolor: "3fff0000" // blue
+      };
+      styles[styleID] = styles[styleID] || defaultStyle;
+      var styleNodes = thisNode.getElementsByTagName('Icon');
+      if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
+        styles[styleID] = {
+          href: nodeValue(styleNodes[0].getElementsByTagName('href')[0]),
+          scale: nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
+        };
+        if (!isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
+      }
+      styleNodes = thisNode.getElementsByTagName('LineStyle');
+      if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
+        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]),
+        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0])
+      }
+      styleNodes = thisNode.getElementsByTagName('PolyStyle');
+      if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
+        styles[styleID].outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0]);
+        styles[styleID].fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0]);
+        styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
+      }
+      return styles[styleID];
+}
+
+function getBooleanValue(node) {
+  var nodeContents = geoXML3.nodeValue(node);
+  if (!nodeContents) return true;
+  if (nodeContents) nodeContents = parseInt(nodeContents);
+  if (isNaN(nodeContents)) return true;
+  if (nodeContents == 0) return false;
+  else return true;
+}   
+
 function processPlacemarkCoords(node, tag) {
    var parent = node.getElementsByTagName(tag);
 var coordListA = [];
@@ -195,33 +236,16 @@ var coordListA = [];
     // Declare some helper functions in local scope for better performance
     var nodeValue  = geoXML3.nodeValue;
 
-      // Parse styles
+    // Parse styles
     var styleID, styleNodes;
     nodes = responseXML.getElementsByTagName('Style');
     nodeCount = nodes.length;
     for (i = 0; i < nodeCount; i++) {
       thisNode = nodes[i];
-      styleID    = '#' + thisNode.getAttribute('id');
-      styleNodes = thisNode.getElementsByTagName('Icon');
-      if (!!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID] = {
-          href: nodeValue(styleNodes[0].getElementsByTagName('href')[0]),
-          scale: nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
-        };
-        if (!isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
-      }
-      styleNodes = thisNode.getElementsByTagName('LineStyle');
-      if (!!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID] = styles[styleID] || {};
-        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]),
-        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0])
-      }
-      styleNodes = thisNode.getElementsByTagName('PolyStyle');
-      if (!!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID] = styles[styleID] || {};
-        styles[styleID].outline   = !!nodeValue(styleNodes[0].getElementsByTagName('outline')[0]);
-        styles[styleID].fill      = !!nodeValue(styleNodes[0].getElementsByTagName('fill')[0]);
-        styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
+      var thisNodeId = thisNode.getAttribute('id');
+      if (!!thisNodeId) {
+        styleID    = '#' + thisNodeId;
+        processStyle(thisNode, styles, styleID);
       }
     }
     doc.styles = styles;
@@ -247,7 +271,21 @@ var coordListA = [];
           description: geoXML3.nodeValue(node.getElementsByTagName('description')[0]),
           styleUrl: geoXML3.nodeValue(node.getElementsByTagName('styleUrl')[0])
         };
-        placemark.style = doc.styles[placemark.styleUrl] || {};
+        var defaultStyle = {
+          color: "ff000000", // black
+          width: 1,
+          fill: true,
+          outline: true,
+          fillcolor: "3fff0000" // blue
+        };
+        placemark.style = doc.styles[placemark.styleUrl] || defaultStyle;
+        // inline style overrides shared style
+        var inlineStyles = node.getElementsByTagName('Style');
+        if (inlineStyles && (inlineStyles.length > 0)) {
+          var style = processStyle(node,doc.styles,"inline");
+	  processStyleID(style);
+	  if (style) placemark.style = style;
+        }
         if (/^https?:\/\//.test(placemark.description)) {
           placemark.description = ['<a href="', placemark.description, '">', placemark.description, '</a>'].join('');
         }
@@ -586,45 +624,59 @@ var randomColor = function(){
   return color;
 };
 
-    
-  var processStyles = function (doc) {
-    var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
-    for (var styleID in doc.styles) {
-      if (!!doc.styles[styleID].href) {
+  var processStyleID = function (style) {
+      var zeroPoint = new google.maps.Point(0,0);
+      if (!!style.href) {
+        var markerRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange|pause|go|stop)(-dot)?\.png/;
+        if (markerRegEx.test(style.href)) {
+         //bottom middle
+	  var anchorPoint = new google.maps.Point(16*style.scale, 32*style.scale);
+	} else {
+	  var anchorPoint = new google.maps.Point(16*style.scale, 12*style.scale);
+	}
         // Init the style object with a standard KML icon
-        doc.styles[styleID].icon =  new google.maps.MarkerImage(
-          doc.styles[styleID].href,
-          new google.maps.Size(32*doc.styles[styleID].scale, 32*doc.styles[styleID].scale),
-          new google.maps.Point(0, 0),
-          new google.maps.Point(16*doc.styles[styleID].scale, 12*doc.styles[styleID].scale),
+        style.icon =  new google.maps.MarkerImage(
+          style.href,
+          new google.maps.Size(32*style.scale, 32*style.scale),
+          zeroPoint,
+          // bottom middle 
+          anchorPoint,
           new google.maps.Size(32,32)
 
         );
 
         // Look for a predictable shadow
-        if (stdRegEx.test(doc.styles[styleID].href)) {
+        var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
+        var shadowSize = new google.maps.Size(59, 32);
+	    var shadowPoint = new google.maps.Point(16,12);
+        if (stdRegEx.test(style.href)) {
           // A standard GMap-style marker icon
-          doc.styles[styleID].shadow = new google.maps.MarkerImage(
+          style.shadow = new google.maps.MarkerImage(
               'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
-              new google.maps.Size(59, 32),
-              new google.maps.Point(0, 0),
-              new google.maps.Point(16, 12));
-        } else if (doc.styles[styleID].href.indexOf('-pushpin.png') > -1) {
+              shadowSize,
+              zeroPoint,
+              shadowPoint);
+        } else if (style.href.indexOf('-pushpin.png') > -1) {
           // Pushpin marker icon
-          doc.styles[styleID].shadow = new google.maps.MarkerImage(
+          style.shadow = new google.maps.MarkerImage(
             'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',
-            new google.maps.Size(59, 32),
-            new google.maps.Point(0, 0),
-            new google.maps.Point(16, 12));
+            shadowSize,
+            zeroPoint,
+            shadowPoint);
         } else {
           // Other MyMaps KML standard icon
-          doc.styles[styleID].shadow = new google.maps.MarkerImage(
-            doc.styles[styleID].href.replace('.png', '.shadow.png'),
-            new google.maps.Size(59, 32),
-            new google.maps.Point(0, 0),
-            new google.maps.Point(16, 12));
+          style.shadow = new google.maps.MarkerImage(
+            style.href.replace('.png', '.shadow.png'),
+            shadowSize,
+            zeroPoint,
+            shadowPoint);
         }
       }
+  }
+    
+  var processStyles = function (doc) {
+    for (var styleID in doc.styles) {
+      processStyleID(doc.styles[styleID]);
     }
   };
 
@@ -775,12 +827,18 @@ var createPolygon = function(placemark, doc) {
       // Load basic polygon properties
       var kmlStrokeColor = kmlColor(placemark.style.color);
       var kmlFillColor = kmlColor(placemark.style.fillcolor);
+      if (!placemark.style.fill) kmlFillColor.opacity = 0.0;
+      var strokeWeight = placemark.style.width;
+      if (!placemark.style.outline) {
+        strokeWeight = 0;
+	kmlStrokeColor.opacity = 0.0;
+      }
       var polyOptions = geoXML3.combineOptions(parserOptions.polygonOptions, {
         map:      parserOptions.map,
         paths:    paths,
         title:    placemark.name,
         strokeColor: kmlStrokeColor.color,
-        strokeWeight: placemark.style.width,
+        strokeWeight: strokeWeight,
         strokeOpacity: kmlStrokeColor.opacity,
         fillColor: kmlFillColor.color,
         fillOpacity: kmlFillColor.opacity
