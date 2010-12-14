@@ -648,7 +648,7 @@ var randomColor = function(){
         // Look for a predictable shadow
         var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
         var shadowSize = new google.maps.Size(59, 32);
-	    var shadowPoint = new google.maps.Point(16,12);
+	    var shadowPoint = new google.maps.Point(16,32);
         if (stdRegEx.test(style.href)) {
           // A standard GMap-style marker icon
           style.shadow = new google.maps.MarkerImage(
