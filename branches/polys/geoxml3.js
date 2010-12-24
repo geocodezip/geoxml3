@@ -97,9 +97,9 @@ geoXML3.parser = function (options) {
         doc.markers[i].setVisible(false);
       }
     }
-    if (!!doc.groundoverlays) {
-      for (i = 0; i < doc.groundoverlays.length; i++) {
-      doc.groundoverlays[i].setOpacity(0);
+    if (!!doc.ggroundoverlays) {
+      for (i = 0; i < doc.ggroundoverlays.length; i++) {
+      doc.ggroundoverlays[i].setOpacity(0);
       }
     }
     if (!!doc.gpolylines) {
@@ -123,9 +123,9 @@ geoXML3.parser = function (options) {
         doc.markers[i].setVisible(true);
       }
     }
-    if (!!doc.groundoverlays) {
-      for (i = 0; i < doc.groundoverlays.length; i++) {
-        doc.groundoverlays[i].setOpacity(doc.groundoverlays[i].percentOpacity_);
+    if (!!doc.ggroundoverlays) {
+      for (i = 0; i < doc.ggroundoverlays.length; i++) {
+        doc.ggroundoverlays[i].setOpacity(doc.ggroundoverlays[i].percentOpacity_);
       }
     }
     if (!!doc.gpolylines) {
@@ -228,7 +228,8 @@ var coordListA = [];
       var i;
       var styles = {};
       doc.placemarks     = [];
-      doc.groundOverlays = [];
+      doc.groundoverlays = [];
+      doc.ggroundoverlays = [];
       doc.networkLinks   = [];
       doc.gpolygons      = [];
       doc.gpolylines     = [];
@@ -432,6 +433,11 @@ var coordListA = [];
           doc.groundoverlays[i].active = false;
         }
       }
+
+      if (!!doc) {
+        doc.groundoverlays = doc.groundoverlays || [];
+      }
+      // doc.groundoverlays =[];
       var groundOverlay, color, transparency, overlay;
       var groundNodes = responseXML.getElementsByTagName('GroundOverlay');
       for (i = 0; i < groundNodes.length; i++) {
@@ -458,14 +464,14 @@ var coordListA = [];
         }
 
       // Opacity is encoded in the color node
-      var colorNode = thisNode.getElementsByTagName('color');
+      var colorNode = node.getElementsByTagName('color');
       if ( colorNode && colorNode.length && (colorNode.length > 0)) {
-        groundOverlay.opacity = getOpacity(nodeValue(colorNode[0]));
+        groundOverlay.opacity = geoXML3.getOpacity(nodeValue(colorNode[0]));
       } else {
         groundOverlay.opacity = 0.45;
       }
 
-      doc.groundOverlays.push(groundOverlay);
+      doc.groundoverlays.push(groundOverlay);
   
         if (!!parserOptions.createOverlay) {
           // User-defined overlay handler
@@ -503,11 +509,10 @@ var coordListA = [];
           overlays[i].remove();
           overlays.splice(i, 1);
           }
-        }
       }
       doc.groundoverlays = overlays;
     }
-
+      }
       // Parse network links
       var networkLink;
       var docPath = document.location.pathname.split('/');
@@ -648,7 +653,7 @@ var randomColor = function(){
         // Look for a predictable shadow
         var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
         var shadowSize = new google.maps.Size(59, 32);
-	    var shadowPoint = new google.maps.Point(16,32);
+	    var shadowPoint = new google.maps.Point(16,12);
         if (stdRegEx.test(style.href)) {
           // A standard GMap-style marker icon
           style.shadow = new google.maps.MarkerImage(
@@ -730,12 +735,12 @@ var randomColor = function(){
         new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
         new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east)
     );
-    var overlayOptions = geoXML3.combineOptions(parserOptions.overlayOptions, {percentOpacity: groundOverlay.opacity});
+    var overlayOptions = geoXML3.combineOptions(parserOptions.overlayOptions, {percentOpacity: groundOverlay.opacity*100});
     var overlay = new ProjectedOverlay(parserOptions.map, groundOverlay.icon.href, bounds, overlayOptions);
     
     if (!!doc) {
-      doc.groundoverlays = doc.groundoverlays || [];
-      doc.groundoverlays.push(overlay);
+      doc.ggroundoverlays = doc.ggroundoverlays || [];
+      doc.ggroundoverlays.push(overlay);
     }
 
     return overlay;
@@ -890,6 +895,17 @@ var createPolygon = function(placemark, doc) {
 // End of KML Parser
 
 // Helper objects and functions
+geoXML3.getOpacity = function (kmlColor) {
+  // Extract opacity encoded in a KML color value. Returns a number between 0 and 1.
+  if (!!kmlColor &&
+      (kmlColor !== '') &&
+      (kmlColor.length == 8)) {
+    var transparency = parseInt(kmlColor.substr(0, 2), 16);
+    return transparency / 255;
+  } else {
+    return 1;
+  }
+};
 
 // Log a message to the debugging console, if one exists
 geoXML3.log = function(msg) {
