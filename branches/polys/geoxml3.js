@@ -70,22 +70,25 @@ geoXML3.parser = function (options) {
         if (baseUrl === docs[j].baseUrl) {
           // Reloading an existing document
           thisDoc = docs[j];
-          thisDoc.url       = urls[i];
-          thisDoc.internals = internals;
           thisDoc.reload    = true;
           docs.splice(j, 1);
           break;
         }
       }
-      thisDoc = thisDoc || {
-        url:       urls[i], 
-        baseUrl:   baseUrl, 
-        internals: internals
-      };
+      if (j >= docs.length) {
+        thisDoc = new Object();
+        thisDoc.baseUrl = baseUrl;
+      }
+      thisDoc.url       = urls[i];
+      thisDoc.internals = internals;
       internals.docSet.push(thisDoc);
-      geoXML3.fetchXML(thisDoc.url, function (responseXML) {render(responseXML, thisDoc);});
+      fetchDoc(thisDoc.url, thisDoc);
     }
   };
+
+  function fetchDoc(url, doc) {
+      geoXML3.fetchXML(url, function (responseXML) { render(responseXML, doc);})
+  }
 
   var hideDocument = function (doc) {
     if (!doc) doc = docs[0];
