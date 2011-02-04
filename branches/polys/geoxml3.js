@@ -640,7 +640,7 @@ var randomColor = function(){
          //bottom middle
 	  var anchorPoint = new google.maps.Point(16*style.scale, 32*style.scale);
 	} else {
-	  var anchorPoint = new google.maps.Point(16*style.scale, 12*style.scale);
+	  var anchorPoint = new google.maps.Point(16*style.scale, 16*style.scale);
 	}
         // Init the style object with a standard KML icon
         style.icon =  new google.maps.MarkerImage(
