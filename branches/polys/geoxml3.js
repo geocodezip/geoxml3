@@ -967,40 +967,40 @@ geoXML3.fetchXML = function (url, callback) {
     callback();
   };
 
-  var xhrFetcher;
+  var xhrFetcher = new Object();
   if (!!geoXML3.fetchers.length) {
     xhrFetcher = geoXML3.fetchers.pop();
   } else {
     if (!!window.XMLHttpRequest) {
-      xhrFetcher = new window.XMLHttpRequest(); // Most browsers
+      xhrFetcher.fetcher = new window.XMLHttpRequest(); // Most browsers
     } else if (!!window.ActiveXObject) {
-      xhrFetcher = new window.ActiveXObject('Microsoft.XMLHTTP'); // Some IE
+      xhrFetcher.fetcher = new window.ActiveXObject('Microsoft.XMLHTTP'); // Some IE
     }
   }
 
-  if (!xhrFetcher) {
+  if (!xhrFetcher.fetcher) {
     geoXML3.log('Unable to create XHR object');
     callback(null);
   } else {
-    xhrFetcher.open('GET', url, true);
-    xhrFetcher.onreadystatechange = function () {
-      if (xhrFetcher.readyState === 4) {
+    xhrFetcher.fetcher.open('GET', url, true);
+    xhrFetcher.fetcher.onreadystatechange = function () {
+      if (xhrFetcher.fetcher.readyState === 4) {
         // Retrieval complete
-        if (!!geoXML3.xhrtimeout)
-          clearTimeout(geoXML3.xhrtimeout);
-        if (xhrFetcher.status >= 400) {
-          geoXML3.log('HTTP error ' + xhrFetcher.status + ' retrieving ' + url);
+        if (!!xhrFetcher.xhrtimeout)
+          clearTimeout(xhrFetcher.xhrtimeout);
+        if (xhrFetcher.fetcher.status >= 400) {
+          geoXML3.log('HTTP error ' + xhrFetcher.fetcher.status + ' retrieving ' + url);
           callback();
         } else {
           // Returned successfully
-	    callback(geoXML3.xmlParse(xhrFetcher.responseText));
+	    callback(geoXML3.xmlParse(xhrFetcher.fetcher.responseText));
         }
         // We're done with this fetcher object
         geoXML3.fetchers.push(xhrFetcher);
       }
     };
-    geoXML3.xhrtimeout = setTimeout(timeoutHandler, 60000);
-    xhrFetcher.send(null);
+    xhrFetcher.xhrtimeout = setTimeout(timeoutHandler, 60000);
+    xhrFetcher.fetcher.send(null);
   }
 };
 
