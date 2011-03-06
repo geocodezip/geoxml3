@@ -143,16 +143,17 @@ geoXML3.parser = function (options) {
     }
   };
 
+var defaultStyle = {
+  color: "ff000000", // black
+  width: 1,
+  fill: true,
+  outline: true,
+  fillcolor: "3fff0000" // blue
+};
+
 function processStyle(thisNode, styles, styleID) {
       var nodeValue  = geoXML3.nodeValue;
-      var defaultStyle = {
-        color: "ff000000", // black
-        width: 1,
-        fill: true,
-        outline: true,
-        fillcolor: "3fff0000" // blue
-      };
-      styles[styleID] = styles[styleID] || defaultStyle;
+      styles[styleID] = styles[styleID] || clone(defaultStyle);
       var styleNodes = thisNode.getElementsByTagName('Icon');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID] = {
@@ -173,6 +174,41 @@ function processStyle(thisNode, styles, styleID) {
         styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
       }
       return styles[styleID];
+}
+
+// from http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-a-javascript-object
+// http://keithdevens.com/weblog/archive/2007/Jun/07/javascript.clone
+  function clone(obj){
+      if(obj == null || typeof(obj) != 'object') return obj;
+      var temp = new obj.constructor(); 
+      for(var key in obj) temp[key] = clone(obj[key]);
+      return temp;
+  }
+
+function processStyleMap(thisNode, styles, styleID) {
+  var nodeValue  = geoXML3.nodeValue;
+  var pairs = thisNode.getElementsByTagName('Pair');
+  var map = new Object();
+  // add each key to the map
+  for (var pr=0;pr<pairs.length;pr++) {
+    var pairkey = nodeValue(pairs[pr].getElementsByTagName('key')[0]);
+    var pairstyle = nodeValue(pairs[pr].getElementsByTagName('Style')[0]);
+    var pairstyleurl = nodeValue(pairs[pr].getElementsByTagName('styleUrl')[0]);
+    if (!!pairstyle) {
+      processStyle(pairstyle, map[pairkey], styleID);
+    } else if (!!pairstyleurl && !!styles[pairstyleurl]) {
+      map[pairkey] = clone(styles[pairstyleurl]);
+    }
+  }
+  if (!!map["normal"]) {
+    styles[styleID] = clone(map["normal"]);
+  } else {
+    styles[styleID] =  clone(defaultStyle);
+  }      
+  if (!!map["highlight"]) {
+    processStyleID(map["highlight"]);
+  }
+  styles[styleID].map = clone(map);
 }
 
 function getBooleanValue(node) {
@@ -252,6 +288,17 @@ var coordListA = [];
         processStyle(thisNode, styles, styleID);
       }
     }
+    // rudamentary support for StyleMap
+    // use "normal" mapping only
+    nodes = responseXML.getElementsByTagName('StyleMap');
+    for (i = 0; i < nodes.length; i++) {
+      thisNode = nodes[i];
+      var thisNodeId = thisNode.getAttribute('id');
+      if (!!thisNodeId) {
+        styleID    = '#' + thisNodeId;
+	processStyleMap(thisNode, styles, styleID);
+      }
+    }
     doc.styles = styles;
       if (!!parserOptions.processStyles || !parserOptions.createMarker) {
         // Convert parsed styles into GMaps equivalents
@@ -275,14 +322,7 @@ var coordListA = [];
           description: geoXML3.nodeValue(node.getElementsByTagName('description')[0]),
           styleUrl: geoXML3.nodeValue(node.getElementsByTagName('styleUrl')[0])
         };
-        var defaultStyle = {
-          color: "ff000000", // black
-          width: 1,
-          fill: true,
-          outline: true,
-          fillcolor: "3fff0000" // blue
-        };
-        placemark.style = doc.styles[placemark.styleUrl] || defaultStyle;
+        placemark.style = doc.styles[placemark.styleUrl] || clone(defaultStyle);
         // inline style overrides shared style
         var inlineStyles = node.getElementsByTagName('Style');
         if (inlineStyles && (inlineStyles.length > 0)) {
