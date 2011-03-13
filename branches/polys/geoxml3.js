@@ -156,10 +156,8 @@ function processStyle(thisNode, styles, styleID) {
       styles[styleID] = styles[styleID] || clone(defaultStyle);
       var styleNodes = thisNode.getElementsByTagName('Icon');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID] = {
-          href: nodeValue(styleNodes[0].getElementsByTagName('href')[0]),
-          scale: nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
-        };
+        styles[styleID].href = nodeValue(styleNodes[0].getElementsByTagName('href')[0]);
+        styles[styleID].scale = nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
         if (!isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
       }
       styleNodes = thisNode.getElementsByTagName('LineStyle');
