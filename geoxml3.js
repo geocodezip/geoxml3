@@ -388,7 +388,7 @@ var coordListA = [];
       doc.placemarks.push(placemark);
       
       if (placemark.Point) {
-          if (parserOptions.zoom && !!google.maps) {
+          if (!!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
           }
@@ -431,7 +431,7 @@ var coordListA = [];
               poly = createPolygon(placemark,doc);
               poly.active = true;
             }
-          if (parserOptions.zoom && !!google.maps) {
+          if (!!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.union(poly.bounds);
           }
@@ -448,7 +448,7 @@ var coordListA = [];
               poly = createPolyline(placemark,doc);
               poly.active = true;
             }
-          if (parserOptions.zoom && !!google.maps) {
+          if (!!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.union(poly.bounds);
           }
@@ -496,7 +496,7 @@ var coordListA = [];
             west:  parseFloat(geoXML3.nodeValue(node.getElementsByTagName('west')[0]))
           }
         };
-        if (parserOptions.zoom && !!google.maps) {
+        if (!!google.maps) {
           doc.bounds = doc.bounds || new google.maps.LatLngBounds();
           doc.bounds.union(new google.maps.LatLngBounds(
             new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
@@ -629,7 +629,7 @@ var coordListA = [];
       if (doc.internals.remaining === 0) {
         // We're done processing this set of KML documents
         // Options that get invoked after parsing completes
-        if (!!doc.internals.bounds) {
+        if (parserOptions.zoom && !!doc.internals.bounds) {
           parserOptions.map.fitBounds(doc.internals.bounds); 
         }
         if (parserOptions.afterParse) {
