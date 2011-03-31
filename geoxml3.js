@@ -758,6 +758,7 @@ var randomColor = function(){
     }
     // Infowindow-opening event handler
     google.maps.event.addListener(marker, 'click', function() {
+      this.infoWindow.close();
       marker.infoWindow.setOptions(infoWindowOptions);
       this.infoWindow.open(this.map, this);
     });
@@ -826,6 +827,7 @@ var randomColor = function(){
     }
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
+      p.infoWindow.close();
       p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
         p.infoWindow.setPosition(e.latLng);
@@ -904,6 +906,7 @@ var createPolygon = function(placemark, doc) {
     }
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
+      p.infoWindow.close();
       p.infoWindow.setOptions(infoWindowOptions);
       if (e && e.latLng) {
         p.infoWindow.setPosition(e.latLng);
