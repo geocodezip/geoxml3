@@ -239,11 +239,13 @@ var coordListA = [];
     var coordList = [];
     for (var k = 0; k < pathLength; k++) {
       coords = path[k].split(',');
-      coordList.push({
-        lat: parseFloat(coords[1]), 
-        lng: parseFloat(coords[0]), 
-        alt: parseFloat(coords[2])
-      });
+      if (!isNaN(coords[0]) && !isNaN(coords[1])) {
+        coordList.push({
+          lat: parseFloat(coords[1]), 
+          lng: parseFloat(coords[0]), 
+          alt: parseFloat(coords[2])
+        });
+      }
     }
     coordListA.push({coordinates: coordList});
   }
