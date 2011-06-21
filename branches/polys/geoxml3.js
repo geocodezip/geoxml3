@@ -41,6 +41,7 @@ geoXML3.parser = function (options) {
   var docs = []; // Individual KML documents
   var lastPlacemark;
   var parserName;
+  if (typeof parserOptions.suppressInfoWindows == "undefined") parserOptions.suppressInfoWindows = false;
   if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
     parserOptions.infoWindow = new google.maps.InfoWindow();
   // Private methods
@@ -747,23 +748,25 @@ var randomColor = function(){
       doc.markers.push(marker);
     }
 
-    // Set up and create the infowindow
-    var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
-      content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
-               '</h3><div>' + placemark.description + '</div></div>',
-      pixelOffset: new google.maps.Size(0, 2)
-    });
-    if (parserOptions.infoWindow) {
-      marker.infoWindow = parserOptions.infoWindow;
-    } else {
-      marker.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
+    // Set up and create the infowindow if it is not suppressed
+    if (!parserOptions.suppressInfoWindows) {
+      var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
+        content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
+                 '</h3><div>' + placemark.description + '</div></div>',
+        pixelOffset: new google.maps.Size(0, 2)
+      });
+      if (parserOptions.infoWindow) {
+        marker.infoWindow = parserOptions.infoWindow;
+      } else {
+        marker.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
+      }
+      // Infowindow-opening event handler
+      google.maps.event.addListener(marker, 'click', function() {
+        this.infoWindow.close();
+        marker.infoWindow.setOptions(infoWindowOptions);
+        this.infoWindow.open(this.map, this);
+      });
     }
-    // Infowindow-opening event handler
-    google.maps.event.addListener(marker, 'click', function() {
-      this.infoWindow.close();
-      marker.infoWindow.setOptions(infoWindowOptions);
-      this.infoWindow.open(this.map, this);
-    });
     placemark.marker = marker;
     return marker;
   };
@@ -791,37 +794,38 @@ var randomColor = function(){
   };
 
 // Create Polyline
-
-  var createPolyline = function(placemark, doc) {
-    var path = [];
-    for (var j=0; j<placemark.LineString.length; j++) {
-      var coords = placemark.LineString[j].coordinates;
-      var bounds = new google.maps.LatLngBounds();
-      for (var i=0;i<coords.length;i++) {
-        var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
-        path.push(pt);
-        bounds.extend(pt);
-      }
+var createPolyline = function(placemark, doc) {
+  var path = [];
+  for (var j=0; j<placemark.LineString.length; j++) {
+    var coords = placemark.LineString[j].coordinates;
+    var bounds = new google.maps.LatLngBounds();
+    for (var i=0;i<coords.length;i++) {
+      var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
+      path.push(pt);
+      bounds.extend(pt);
     }
-      // point to open the infowindow if triggered 
-      var point = path[Math.floor(path.length/2)];
-      // Load basic polyline properties
-      var kmlStrokeColor = kmlColor(placemark.style.color);
-      var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
-        map:      parserOptions.map,
-        path: path,
-        strokeColor: kmlStrokeColor.color,
-        strokeWeight: placemark.style.width,
-        strokeOpacity: kmlStrokeColor.opacity,
-        title:    placemark.name
-      });
-      var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
-        content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
-                 '</h3><div>' + placemark.description + '</div></div>',
-        pixelOffset: new google.maps.Size(0, 2)
-      });
-    var p = new google.maps.Polyline(polyOptions);
-    p.bounds = bounds;
+  }
+  // point to open the infowindow if triggered 
+  var point = path[Math.floor(path.length/2)];
+  // Load basic polyline properties
+  var kmlStrokeColor = kmlColor(placemark.style.color);
+  var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
+    map:      parserOptions.map,
+    path: path,
+    strokeColor: kmlStrokeColor.color,
+    strokeWeight: placemark.style.width,
+    strokeOpacity: kmlStrokeColor.opacity,
+    title:    placemark.name
+  });
+  var p = new google.maps.Polyline(polyOptions);
+  p.bounds = bounds;
+  // setup and create the infoWindow if it is not suppressed
+  if (!parserOptions.suppressInfoWindows) {
+    var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
+      content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
+               '</h3><div>' + placemark.description + '</div></div>',
+      pixelOffset: new google.maps.Size(0, 2)
+    });
     if (parserOptions.infoWindow) {
       p.infoWindow = parserOptions.infoWindow;
     } else {
@@ -838,18 +842,18 @@ var randomColor = function(){
       }
       p.infoWindow.open(this.map);
     });
-    if (!!doc) doc.gpolylines.push(p);
+  }
+  if (!!doc) doc.gpolylines.push(p);
   placemark.polyline = p;
   return p;
 }
 
 // Create Polygon
-
 var createPolygon = function(placemark, doc) {
   var bounds = new google.maps.LatLngBounds();
   var pathsLength = 0;
-    var paths = [];
-    for (var polygonPart=0;polygonPart<placemark.Polygon.length;polygonPart++) {
+  var paths = [];
+  for (var polygonPart=0;polygonPart<placemark.Polygon.length;polygonPart++) {
     for (var j=0; j<placemark.Polygon[polygonPart].outerBoundaryIs.length; j++) {
       var coords = placemark.Polygon[polygonPart].outerBoundaryIs[j].coordinates;
       var path = [];
@@ -874,33 +878,33 @@ var createPolygon = function(placemark, doc) {
     }
   }
 
-      // Load basic polygon properties
-      var kmlStrokeColor = kmlColor(placemark.style.color);
-      var kmlFillColor = kmlColor(placemark.style.fillcolor);
-      if (!placemark.style.fill) kmlFillColor.opacity = 0.0;
-      var strokeWeight = placemark.style.width;
-      if (!placemark.style.outline) {
-        strokeWeight = 0;
-	kmlStrokeColor.opacity = 0.0;
-      }
-      var polyOptions = geoXML3.combineOptions(parserOptions.polygonOptions, {
-        map:      parserOptions.map,
-        paths:    paths,
-        title:    placemark.name,
-        strokeColor: kmlStrokeColor.color,
-        strokeWeight: strokeWeight,
-        strokeOpacity: kmlStrokeColor.opacity,
-        fillColor: kmlFillColor.color,
-        fillOpacity: kmlFillColor.opacity
-      });
-
-      var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
-        content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
-                 '</h3><div>' + placemark.description + '</div></div>',
-        pixelOffset: new google.maps.Size(0, 2)
-      });
-    var p = new google.maps.Polygon(polyOptions);
-    p.bounds = bounds;
+  // Load basic polygon properties
+  var kmlStrokeColor = kmlColor(placemark.style.color);
+  var kmlFillColor = kmlColor(placemark.style.fillcolor);
+  if (!placemark.style.fill) kmlFillColor.opacity = 0.0;
+  var strokeWeight = placemark.style.width;
+  if (!placemark.style.outline) {
+    strokeWeight = 0;
+    kmlStrokeColor.opacity = 0.0;
+  }
+  var polyOptions = geoXML3.combineOptions(parserOptions.polygonOptions, {
+    map:      parserOptions.map,
+    paths:    paths,
+    title:    placemark.name,
+    strokeColor: kmlStrokeColor.color,
+    strokeWeight: strokeWeight,
+    strokeOpacity: kmlStrokeColor.opacity,
+    fillColor: kmlFillColor.color,
+    fillOpacity: kmlFillColor.opacity
+  });
+  var p = new google.maps.Polygon(polyOptions);
+  p.bounds = bounds;
+  if (!parserOptions.suppressInfoWindows) {
+    var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
+      content: '<div class="geoxml3_infowindow"><h3>' + placemark.name + 
+               '</h3><div>' + placemark.description + '</div></div>',
+      pixelOffset: new google.maps.Size(0, 2)
+    });
     if (parserOptions.infoWindow) {
       p.infoWindow = parserOptions.infoWindow;
     } else {
@@ -917,7 +921,8 @@ var createPolygon = function(placemark, doc) {
       }
       p.infoWindow.open(this.map);
     });
-    if (!!doc) doc.gpolygons.push(p);
+  }
+  if (!!doc) doc.gpolygons.push(p);
   placemark.polygon = p;
   return p;
 }
