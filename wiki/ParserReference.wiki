@@ -25,6 +25,7 @@ All top-level objects and functions are declared under a namespace of `geoXML3`.
 ==`geoXML3.parser` Methods==
 ||*Name*||*Description*||
 ||`parse(url: String)`      `parse(urls: Array` of `String)`||Invoke processing of the KML document(s) located at the passed URL(s). Documents are downloaded and parsed asynchronously.||
+||`parseKmlString(string: String)`      ||Invoke processing of the KML string passed into the method.||
 ||`hideDocument(doc: Object)`||Visually remove from the map all geodata objects created by the parser for the given document.||
 ||`showDocument(doc: Object)`||Visually restore to the map all geodata objects created by the parser for the given document.||
 ||`processStyles(doc: Object)`||If the `processStyles` option (above) was set to `false`, disabling automatic generation of GMaps API objects from KML `<Style>` elements, this function can be called to invoke such processing manually. Must be called before `createMarker` (below) in order for created map `Marker`s to have style applied.||
