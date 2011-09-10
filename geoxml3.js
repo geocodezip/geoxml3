@@ -44,7 +44,20 @@ geoXML3.parser = function (options) {
   if (typeof parserOptions.suppressInfoWindows == "undefined") parserOptions.suppressInfoWindows = false;
   if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
     parserOptions.infoWindow = new google.maps.InfoWindow();
-  // Private methods
+
+  var parseKmlString = function (kmlString, docSet) {
+    // Internal values for the set of documents as a whole
+    var internals = {
+      parser: this,
+      docSet: docSet || [],
+      remaining: 1,
+      parseOnly: !(parserOptions.afterParse || parserOptions.processStyles)
+    };
+    thisDoc = new Object();
+    thisDoc.internals = internals;
+    internals.docSet.push(thisDoc);
+    render(geoXML3.xmlParse(kmlString),thisDoc);
+  }
 
   var parse = function (urls, docSet) {
     // Process one or more KML documents
@@ -934,6 +947,7 @@ var createPolygon = function(placemark, doc) {
     docs:    docs,
     
     parse:          parse,
+    parseKmlString: parseKmlString,
     hideDocument:   hideDocument,
     showDocument:   showDocument,
     processStyles:  processStyles, 
