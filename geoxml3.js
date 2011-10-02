@@ -116,16 +116,18 @@ geoXML3.parser = function (options) {
     }
     if (!!doc.ggroundoverlays) {
       for (i = 0; i < doc.ggroundoverlays.length; i++) {
-      doc.ggroundoverlays[i].setOpacity(0);
+        doc.ggroundoverlays[i].setOpacity(0);
       }
     }
     if (!!doc.gpolylines) {
       for (i=0;i<doc.gpolylines.length;i++) {
+        if(!!doc.gpolylines[i].infoWindow) doc.gpolylines[i].infoWindow.close();
         doc.gpolylines[i].setMap(null);
       }
     }
     if (!!doc.gpolygons) {
       for (i=0;i<doc.gpolygons.length;i++) {
+        if(!!doc.gpolygons[i].infoWindow) doc.gpolygons[i].infoWindow.close();
         doc.gpolygons[i].setMap(null);
       }
     }
@@ -773,10 +775,12 @@ var randomColor = function(){
       } else {
         marker.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
       }
+      marker.infoWindowOptions = infoWindowOptions;
+      
       // Infowindow-opening event handler
       google.maps.event.addListener(marker, 'click', function() {
         this.infoWindow.close();
-        marker.infoWindow.setOptions(infoWindowOptions);
+        marker.infoWindow.setOptions(this.infoWindowOptions);
         this.infoWindow.open(this.map, this);
       });
     }
@@ -844,10 +848,11 @@ var createPolyline = function(placemark, doc) {
     } else {
       p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
     }
+    p.infoWindowOptions = infoWindowOptions;
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
       p.infoWindow.close();
-      p.infoWindow.setOptions(infoWindowOptions);
+      p.infoWindow.setOptions(p.infoWindowOptions);
       if (e && e.latLng) {
         p.infoWindow.setPosition(e.latLng);
       } else {
@@ -923,10 +928,11 @@ var createPolygon = function(placemark, doc) {
     } else {
       p.infoWindow = new google.maps.InfoWindow(infoWindowOptions);
     }
+    p.infoWindowOptions = infoWindowOptions;
     // Infowindow-opening event handler
     google.maps.event.addListener(p, 'click', function(e) {
       p.infoWindow.close();
-      p.infoWindow.setOptions(infoWindowOptions);
+      p.infoWindow.setOptions(p.infoWindowOptions);
       if (e && e.latLng) {
         p.infoWindow.setPosition(e.latLng);
       } else {
