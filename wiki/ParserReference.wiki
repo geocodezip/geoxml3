@@ -8,6 +8,7 @@ All top-level objects and functions are declared under a namespace of `geoXML3`.
 ||`map`||`google.maps.Map` object||`null`||The API map on which geo objects should be rendered.||
 ||`zoom`||`boolean`||`true`||If `true`, the parser will automatically move the map to a best-fit of the geodata after parsing of a KML document completes.||
 ||`singleInfoWindow`||`boolean`||`false`||If `true`, only a single `Marker` created by the parser will be able to have its InfoWindow open at once (simulating the behavior of GMaps API v2).||
+||`suppressInfoWindows`||`boolean`||`false`||If `true`, suppresses the rendering of info windows.||
 ||`markerOptions`||`google.maps.Marker` options||`{}`||If the parser is adding `Marker`s to the map itself, any options specified here will be applied to them.||
 ||`infoWindowOptions`||`google.maps.InfoWindow` options||`{}`||If the parser is adding `Marker`s to the map itself, any options specified here will be applied to their attached InfoWindows.||
 ||`overlayOptions`||`ProjectedOverlay` options||`{}`||If the parser is adding `ProjectedOverlay`s to the map itself, any options specified here will be applied to them.||
