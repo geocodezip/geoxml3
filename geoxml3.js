@@ -85,17 +85,16 @@ geoXML3.parser = function (options) {
           // Reloading an existing document
           thisDoc = docs[j];
           thisDoc.reload    = true;
-          docs.splice(j, 1);
           break;
         }
       }
       if (j >= docs.length) {
         thisDoc = new Object();
         thisDoc.baseUrl = baseUrl;
+        internals.docSet.push(thisDoc);
       }
       thisDoc.url       = urls[i];
       thisDoc.internals = internals;
-      internals.docSet.push(thisDoc);
       fetchDoc(thisDoc.url, thisDoc);
     }
   };
