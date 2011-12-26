@@ -658,7 +658,7 @@ var coordListA = [];
 
         if (!doc.internals.parseOnly) {
           // geoXML3 is not being used only as a real-time parser, so keep the processed documents around
-            for (var i=(doc.internals.docSet.length-1);i>=0;i--) {
+            for (var i=0;i<doc.internals.docSet.length;i++) {
               docs.push(doc.internals.docSet[i]);
             }
         }
