@@ -169,16 +169,19 @@ var defaultStyle = {
 function processStyle(thisNode, styles, styleID) {
       var nodeValue  = geoXML3.nodeValue;
       styles[styleID] = styles[styleID] || clone(defaultStyle);
-      var styleNodes = thisNode.getElementsByTagName('Icon');
+      var styleNodes = thisNode.getElementsByTagName('IconStyle');
+      if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
+        styles[styleID].scale = parseFloat(nodeValue(styleNodes[0].getElementsByTagName('scale')[0]));
+      }
+      if (isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
+      styleNodes = thisNode.getElementsByTagName('Icon');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID].href = nodeValue(styleNodes[0].getElementsByTagName('href')[0]);
-        styles[styleID].scale = nodeValue(styleNodes[0].getElementsByTagName('scale')[0])
-        if (!isNaN(styles[styleID].scale)) styles[styleID].scale = 1.0;
       }
       styleNodes = thisNode.getElementsByTagName('LineStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]),
-        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0])
+        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
+        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0]);
       }
       styleNodes = thisNode.getElementsByTagName('PolyStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
@@ -704,7 +707,7 @@ var randomColor = function(){
           zeroPoint,
           // bottom middle 
           anchorPoint,
-          new google.maps.Size(32,32)
+          new google.maps.Size(32*style.scale, 32*style.scale)
 
         );
 
