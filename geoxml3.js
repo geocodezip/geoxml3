@@ -1485,9 +1485,8 @@ geoXML3.getBooleanValue = function(node, defVal) {
 }
 
 // IE8 doesn't define this, yay!
-geoXML3.getElementsByTagNameNS = 
-  (Element && Element.prototype && Element.prototype.getElementsByTagNameNS) ? Element.prototype.getElementsByTagNameNS.call :
-function(node, namespace, tagname) {
+geoXML3.getElementsByTagNameNS = function(node, namespace, tagname) {
+ if (node && node.getElementsByTagNameNS) return node.getElementsByTagNameNS(namespace, tagname);
   var result = [];
   var root = node.ownerDocument.childNodes[1];
   
@@ -1497,7 +1496,7 @@ function(node, namespace, tagname) {
     if (attr.prefix === 'xmlns' && attr.nodeValue === namespace)
       return node.getElementsByTagName(attr.baseName + ':' + tagname);
   }
-  return null;
+  return new Array(); // empty result set
 };
 
 
@@ -1527,8 +1526,9 @@ var dehostURL = function (s) {
   return s.replace(new RegExp('^' + h, 'i'), '');
 }
 
-var cleanURL  = function (d, s) { return dehostURL(toAbsURL(d.split('#')[0].split('?')[0], s.split('#')[0].split('?')[0])); }
-var defileURL = function (s)    { return s.substr(0, s.lastIndexOf('/') + 1); }
+var cleanURL  = function (d, s) { return dehostURL(toAbsURL(d ? d.split('#')[0].split('?')[0] : defileURL(location.pathname), s ? s.split('#')[0].split('?')[0] : '')); }
+var defileURL = function (s)    { return s ? s.substr(0, s.lastIndexOf('/') + 1) : '/'; }
+
 
 // Some extra Array subs for ease of use
 // http://stackoverflow.com/questions/143847/best-way-to-find-an-item-in-a-javascript-array
