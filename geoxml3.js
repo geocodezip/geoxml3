@@ -1490,6 +1490,7 @@ geoXML3.getElementsByTagNameNS = function(node, namespace, tagname) {
   var result = [];
   var root = node.ownerDocument.childNodes[1];
   
+  if (!root.attributes) return new Array();
   // search for namespace prefix
   for (var i = 0; i < root.attributes.length; i++) {
     var attr = root.attributes[i];
