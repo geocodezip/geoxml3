@@ -309,6 +309,7 @@ geoXML3.parser = function (options) {
   // http://keithdevens.com/weblog/archive/2007/Jun/07/javascript.clone
   function clone(obj){
     if(obj == null || typeof(obj) != 'object') return obj;
+    if (obj.cloneNode) return obj.cloneNode(true);
     var temp = new obj.constructor();
     for(var key in obj) temp[key] = clone(obj[key]);
     return temp;
