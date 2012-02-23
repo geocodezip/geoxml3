@@ -1180,6 +1180,8 @@ geoXML3.parser = function (options) {
       var address = encodeURIComponent( vars.val.address || placemark.latlng.toUrlValue() ).replace(/\%20/g, '+');
       
       vars.val.geDirections = '<a href="' + url + '&daddr=' + address + '" target=_blank>To Here</a> - <a href="' + url + '&saddr=' + address + '" target=_blank>From Here</a>';
+    } else {
+	vars.val.geDirections = "";
     }
     
     // add in the variables
