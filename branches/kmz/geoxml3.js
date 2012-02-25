@@ -237,47 +237,46 @@ geoXML3.parser = function (options) {
       if (!!styleNodes && styleNodes.length > 0) {
         icon.href = nodeValue(styleNodes[0].getElementsByTagName('href')[0]);
         icon.url  = cleanURL(baseDir, icon.href);
-      }
+        // Detect images buried in KMZ files (and use a base64 encoded URL)
+        if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
 
-      // Detect images buried in KMZ files (and use a base64 encoded URL)
-      if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
-
-      // Support for icon palettes and exact size dimensions
-      icon.dim = {
-        x: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'x')[0], icon.dim.x)),
-        y: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'y')[0], icon.dim.y)),
-        w: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'w')[0], icon.dim.w)),
-        h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'h')[0], icon.dim.h))
-      };
-
-      styleNodes = styleNodes[0].getElementsByTagName('hotSpot')[0];
-      if (!!styleNodes && styleNodes.length > 0) {
-        icon.hotSpot = {
-          x:      styleNodes[0].getAttribute('x'),
-          y:      styleNodes[0].getAttribute('y'),
-          xunits: styleNodes[0].getAttribute('xunits'),
-          yunits: styleNodes[0].getAttribute('yunits')
+        // Support for icon palettes and exact size dimensions
+        icon.dim = {
+          x: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'x')[0], icon.dim.x)),
+          y: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'y')[0], icon.dim.y)),
+          w: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'w')[0], icon.dim.w)),
+          h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'h')[0], icon.dim.h))
         };
-      }
+
+        styleNodes = styleNodes[0].getElementsByTagName('hotSpot')[0];
+        if (!!styleNodes && styleNodes.length > 0) {
+          icon.hotSpot = {
+            x:      styleNodes[0].getAttribute('x'),
+            y:      styleNodes[0].getAttribute('y'),
+            xunits: styleNodes[0].getAttribute('xunits'),
+            yunits: styleNodes[0].getAttribute('yunits')
+          };
+        }
       
-      // certain occasions where we need the pixel size of the image (like the default settings...)
-      // (NOTE: Scale is applied to entire image, not just the section of the icon palette.  So,
-      //  if we need scaling, we'll need the img dimensions no matter what.)
-      if ( (icon.dim.w < 0 || icon.dim.h < 0) && (icon.xunits != 'pixels' || icon.yunits == 'fraction') || icon.scale != 1.0) {
-        // (hopefully, this will load by the time we need it...)
-        icon.img = new Image();
-        icon.img.onload = function() {
-          if (icon.dim.w < 0 || icon.dim.h < 0) {
-            icon.dim.w = this.width;
-            icon.dim.h = this.height;
-          }
-        };
-        icon.img.src = icon.url;
+        // certain occasions where we need the pixel size of the image (like the default settings...)
+        // (NOTE: Scale is applied to entire image, not just the section of the icon palette.  So,
+        //  if we need scaling, we'll need the img dimensions no matter what.)
+        if ( (icon.dim.w < 0 || icon.dim.h < 0) && (icon.xunits != 'pixels' || icon.yunits == 'fraction') || icon.scale != 1.0) {
+          // (hopefully, this will load by the time we need it...)
+          icon.img = new Image();
+          icon.img.onload = function() {
+            if (icon.dim.w < 0 || icon.dim.h < 0) {
+              icon.dim.w = this.width;
+              icon.dim.h = this.height;
+            }
+          };
+          icon.img.src = icon.url;
         
-        // sometimes the file is already cached and it never calls onLoad
-        if (icon.img.width > 0) {
-          icon.dim.w = icon.img.width;
-          icon.dim.h = icon.img.height;
+          // sometimes the file is already cached and it never calls onLoad
+          if (icon.img.width > 0) {
+            icon.dim.w = icon.img.width;
+            icon.dim.h = icon.img.height;
+          }
         }
       }
     }
