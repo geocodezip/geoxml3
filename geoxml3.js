@@ -1,50 +1,66 @@
-/*
-    geoxml3.js
+/**
+ * @fileOverview Renders KML on the Google Maps JavaScript API Version 3
+ * @name GeoXML3
+ * @author Sterling Udell, Larry Ross, Brendan Byrd
+ * @see http://code.google.com/p/geoxml3/
+ *
+ * geoxml3.js
+ *
+ * Renders KML on the Google Maps JavaScript API Version 3
+ * http://code.google.com/p/geoxml3/
+ *
+ * Copyright 2010 Sterling Udell, Larry Ross
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-    Renders KML on the Google Maps JavaScript API Version 3
-    http://code.google.com/p/geoxml3/
-
-   Copyright 2010 Sterling Udell, Larry Ross
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-*/
-
-// Extend the global String object with a method to remove leading and trailing whitespace
 if (!String.prototype.trim) {
+/**
+ * Remove leading and trailing whitespace.
+ *
+ * @augments String
+ * @return {String}
+ */
   String.prototype.trim = function () {
     return this.replace(/^\s+|\s+$/g, '');
   };
 }
 
-// Declare namespace
+/**
+ * @namespace The GeoXML3 namespace.
+ */
 geoXML3 = window.geoXML3 || {instances: []};
 
-// Constructor for the root KML parser object
+/**
+ * Constructor for the root KML parser object.
+ *
+ * <p>All top-level objects and functions are declared under a namespace of geoXML3.
+ * The core object is geoXML3.parser; typically, you'll instantiate a one parser
+ * per map.</p>
+ *
+ * @class Main XML parser.
+ * @param {geoXML3.parserOptions} options
+ */
 geoXML3.parser = function (options) {
   // Private variables
-  var parserOptions = geoXML3.combineOptions(options, {
-    singleInfoWindow: false,
-    processStyles: true,
-    zoom: true
-  });
+  var parserOptions = new geoXML3.parserOptions(options);
   var docs        = [];  // Individual KML documents
-  var docsByUrl   = [];  // Same docs as an hash by cleanURL
-  var kmzMetaData = [];  // Extra files from KMZ data
+  var docsByUrl   = {};  // Same docs as an hash by cleanURL
+  var kmzMetaData = {};  // Extra files from KMZ data
   var styles      = {};  // Global list of styles
   var lastPlacemark;
   var parserName;
-  if (typeof parserOptions.suppressInfoWindows == "undefined") parserOptions.suppressInfoWindows = false;
   if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
     parserOptions.infoWindow = new google.maps.InfoWindow();
 
@@ -101,7 +117,7 @@ geoXML3.parser = function (options) {
 
   function fetchDoc(url, doc, resFunc) {
     resFunc = resFunc || function (responseXML) { render(responseXML, doc); };
-  
+
     if (typeof ZipFile === 'function' && typeof JSIO === 'object' && typeof JSIO.guessFileType === 'function') {  // KMZ support requires these modules loaded
       contentType = JSIO.guessFileType(doc.baseUrl);
       if (contentType == JSIO.FileType.Binary || contentType == JSIO.FileType.Unknown) {
@@ -205,50 +221,51 @@ geoXML3.parser = function (options) {
       outline: true
     }
   };
-  
-  var gx = 'http://www.google.com/kml/ext/2.2';
+
+  var kmlNS = 'http://www.opengis.net/kml/2.2';
+  var gxNS  = 'http://www.google.com/kml/ext/2.2';
+  var nodeValue              = geoXML3.nodeValue;
+  var getBooleanValue        = geoXML3.getBooleanValue;
+  var getElementsByTagNameNS = geoXML3.getElementsByTagNameNS;
 
   function processStyle(thisNode, baseUrl, styleID, baseDir) {
-    var nodeValue              = geoXML3.nodeValue;
-    var getBooleanValue        = geoXML3.getBooleanValue;
-    var getElementsByTagNameNS = geoXML3.getElementsByTagNameNS;
     var style = (baseUrl === '{inline}') ? clone(defaultStyle) : (styles[baseUrl][styleID] = styles[baseUrl][styleID] || clone(defaultStyle));
-    
-    var styleNodes = thisNode.getElementsByTagName('BalloonStyle');
+
+    var styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'BalloonStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.balloon.bgColor     = nodeValue(styleNodes[0].getElementsByTagName('bgColor')[0],     style.balloon.bgColor);
-      style.balloon.textColor   = nodeValue(styleNodes[0].getElementsByTagName('textColor')[0],   style.balloon.textColor);
-      style.balloon.text        = nodeValue(styleNodes[0].getElementsByTagName('text')[0],        style.balloon.text);
-      style.balloon.displayMode = nodeValue(styleNodes[0].getElementsByTagName('displayMode')[0], style.balloon.displayMode);
+      style.balloon.bgColor     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'bgColor')[0],     style.balloon.bgColor);
+      style.balloon.textColor   = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'textColor')[0],   style.balloon.textColor);
+      style.balloon.text        = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'text')[0],        style.balloon.text);
+      style.balloon.displayMode = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'displayMode')[0], style.balloon.displayMode);
     }
 
     // style.list = (unsupported; doesn't make sense in Google Maps)
 
-    var styleNodes = thisNode.getElementsByTagName('IconStyle');
+    var styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'IconStyle');
     if (!!styleNodes && styleNodes.length > 0) {
       var icon = style.icon;
-    
-      icon.scale = parseFloat(nodeValue(styleNodes[0].getElementsByTagName('scale')[0], icon.scale));
+
+      icon.scale = parseFloat(nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'scale')[0], icon.scale));
       // style.icon.heading   = (unsupported; not supported in API)
       // style.icon.color     = (unsupported; not supported in API)
       // style.icon.colorMode = (unsupported; not supported in API)
 
-      styleNodes = thisNode.getElementsByTagName('Icon');
+      styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'Icon');
       if (!!styleNodes && styleNodes.length > 0) {
-        icon.href = nodeValue(styleNodes[0].getElementsByTagName('href')[0]);
+        icon.href = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'href')[0]);
         icon.url  = cleanURL(baseDir, icon.href);
         // Detect images buried in KMZ files (and use a base64 encoded URL)
         if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
 
         // Support for icon palettes and exact size dimensions
         icon.dim = {
-          x: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'x')[0], icon.dim.x)),
-          y: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'y')[0], icon.dim.y)),
-          w: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'w')[0], icon.dim.w)),
-          h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gx, 'h')[0], icon.dim.h))
+          x: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'x')[0], icon.dim.x)),
+          y: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'y')[0], icon.dim.y)),
+          w: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'w')[0], icon.dim.w)),
+          h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'h')[0], icon.dim.h))
         };
 
-        styleNodes = styleNodes[0].getElementsByTagName('hotSpot')[0];
+        styleNodes = getElementsByTagNameNS(styleNodes[0], kmlNS, 'hotSpot')[0];
         if (!!styleNodes && styleNodes.length > 0) {
           icon.hotSpot = {
             x:      styleNodes[0].getAttribute('x'),
@@ -257,7 +274,7 @@ geoXML3.parser = function (options) {
             yunits: styleNodes[0].getAttribute('yunits')
           };
         }
-      
+
         // certain occasions where we need the pixel size of the image (like the default settings...)
         // (NOTE: Scale is applied to entire image, not just the section of the icon palette.  So,
         //  if we need scaling, we'll need the img dimensions no matter what.)
@@ -271,7 +288,7 @@ geoXML3.parser = function (options) {
             }
           };
           icon.img.src = icon.url;
-        
+
           // sometimes the file is already cached and it never calls onLoad
           if (icon.img.width > 0) {
             icon.dim.w = icon.img.width;
@@ -280,26 +297,26 @@ geoXML3.parser = function (options) {
         }
       }
     }
-    
+
     // style.label = (unsupported; may be possible but not with API)
-    
-    styleNodes = thisNode.getElementsByTagName('LineStyle');
+
+    styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'LineStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.line.color     = nodeValue(styleNodes[0].getElementsByTagName('color')[0],     style.line.color);
-      style.line.colorMode = nodeValue(styleNodes[0].getElementsByTagName('colorMode')[0], style.line.colorMode);
-      style.line.width     = nodeValue(styleNodes[0].getElementsByTagName('width')[0],     style.line.width);
+      style.line.color     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'color')[0],     style.line.color);
+      style.line.colorMode = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'colorMode')[0], style.line.colorMode);
+      style.line.width     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'width')[0],     style.line.width);
       // style.line.outerColor      = (unsupported; not supported in API)
       // style.line.outerWidth      = (unsupported; not supported in API)
       // style.line.physicalWidth   = (unsupported; unneccesary in Google Maps)
       // style.line.labelVisibility = (unsupported; possible to implement)
     }
-    
-    styleNodes = thisNode.getElementsByTagName('PolyStyle');
+
+    styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'PolyStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.poly.color     = nodeValue(      styleNodes[0].getElementsByTagName('color')[0],     style.poly.color);
-      style.poly.colorMode = nodeValue(      styleNodes[0].getElementsByTagName('colorMode')[0], style.poly.colorMode);
-      style.poly.outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0],   style.poly.outline);
-      style.poly.fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0],      style.poly.fill);
+      style.poly.color     = nodeValue(      getElementsByTagNameNS(styleNodes[0], kmlNS, 'color')[0],     style.poly.color);
+      style.poly.colorMode = nodeValue(      getElementsByTagNameNS(styleNodes[0], kmlNS, 'colorMode')[0], style.poly.colorMode);
+      style.poly.outline   = getBooleanValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'outline')[0],   style.poly.outline);
+      style.poly.fill      = getBooleanValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'fill')[0],      style.poly.fill);
     }
     return style;
   }
@@ -315,18 +332,17 @@ geoXML3.parser = function (options) {
   }
 
   function processStyleMap(thisNode, baseUrl, styleID, baseDir) {
-    var nodeValue  = geoXML3.nodeValue;
-    var pairs = thisNode.getElementsByTagName('Pair');
+    var pairs = getElementsByTagNameNS(thisNode, kmlNS, 'Pair');
     var map = new Object();
 
     // add each key to the map
     for (var pr=0;pr<pairs.length;pr++) {
-      var pairKey      = nodeValue(pairs[pr].getElementsByTagName('key')[0]);
-      var pairStyle    = nodeValue(pairs[pr].getElementsByTagName('Style')[0]);
-      var pairStyleUrl = nodeValue(pairs[pr].getElementsByTagName('styleUrl')[0]).split('#');
+      var pairKey      = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'key')[0]);
+      var pairStyle    = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'Style')[0]);
+      var pairStyleUrl = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'styleUrl')[0]).split('#');
       var pairStyleBaseUrl = pairStyleUrl[0] ? cleanURL(baseDir, pairStyleUrl[0]) : baseUrl;
       var pairStyleID      = pairStyleUrl[1];
-      
+
       if (!!pairStyle) {
         map[pairKey] = processStyle(pairStyle, pairStyleBaseUrl, pairStyleID);
       } else if (!!pairStyleID && !!styles[pairStyleBaseUrl][pairStyleID]) {
@@ -345,10 +361,10 @@ geoXML3.parser = function (options) {
   }
 
   function processPlacemarkCoords(node, tag) {
-    var parent = node.getElementsByTagName(tag);
+    var parent = getElementsByTagNameNS(node, kmlNS, tag);
     var coordListA = [];
     for (var i=0; i<parent.length; i++) {
-      var coordNodes = parent[i].getElementsByTagName('coordinates')
+      var coordNodes = getElementsByTagNameNS(parent[i], kmlNS, 'coordinates');
       if (!coordNodes) {
         if (coordListA.length > 0) {
           break;
@@ -358,7 +374,7 @@ geoXML3.parser = function (options) {
       }
 
       for (var j=0; j<coordNodes.length;j++) {
-        var coords = geoXML3.nodeValue(coordNodes[j]).trim();
+        var coords = nodeValue(coordNodes[j]).trim();
         coords = coords.replace(/,\s+/g, ',');
         var path = coords.split(/\s+/g);
         var pathLength = path.length;
@@ -389,19 +405,19 @@ geoXML3.parser = function (options) {
       return;
     } else if (responseXML.parseError && responseXML.parseError.errorCode != 0) {
       // IE parse error
-      var err = responseXML.parseError; 
+      var err = responseXML.parseError;
       var msg = 'Parse error in line ' + err.line + ', col ' + err.linePos + ' (error code: ' + err.errorCode + ")\n" +
         "\nError Reason: " + err.reason +
         'Error Line: ' + err.srcText;
-      
+
       geoXML3.log('Unable to retrieve ' + doc.url + ': ' + msg);
-      if (parserOptions.failedParse) parserOptions.failedParse(doc);          
+      if (parserOptions.failedParse) parserOptions.failedParse(doc);
       doc.failed = true;
       return;
     } else if (responseXML.documentElement && responseXML.documentElement.nodeName == 'parsererror') {
       // Firefox parse error
       geoXML3.log('Unable to retrieve ' + doc.url + ': ' + responseXML.documentElement.childNodes[0].nodeValue);
-      if (parserOptions.failedParse) parserOptions.failedParse(doc);    
+      if (parserOptions.failedParse) parserOptions.failedParse(doc);
       doc.failed = true;
       return;
     } else if (!doc) {
@@ -415,13 +431,10 @@ geoXML3.parser = function (options) {
       doc.gpolygons       = [];
       doc.gpolylines      = [];
 
-      // Declare some helper functions in local scope for better performance
-      var nodeValue  = geoXML3.nodeValue;
-
       // Check for dependent KML files
-      var nodes = responseXML.getElementsByTagName('styleUrl');
+      var nodes = getElementsByTagNameNS(responseXML, kmlNS, 'styleUrl');
       var docSet = doc.internals.docSet;
-      
+
       for (var i = 0; i < nodes.length; i++) {
         var url = nodeValue(nodes[i]).split('#')[0];
         if (!url)                 continue;  // #id (inside doc)
@@ -453,7 +466,7 @@ geoXML3.parser = function (options) {
           render(thisResXML, thisDoc);
           render(responseXML, doc);
         });
-        
+
         // to prevent cross-dependency issues, just load the one
         // file first and re-check the rest later
         return;
@@ -462,7 +475,7 @@ geoXML3.parser = function (options) {
       // Parse styles
       doc.styles = styles[doc.baseUrl] = styles[doc.baseUrl] || {};
       var styleID, styleNodes;
-      nodes = responseXML.getElementsByTagName('Style');
+      nodes = getElementsByTagNameNS(responseXML, kmlNS, 'Style');
       nodeCount = nodes.length;
       for (i = 0; i < nodeCount; i++) {
         thisNode = nodes[i];
@@ -470,7 +483,7 @@ geoXML3.parser = function (options) {
         if (!!styleID) processStyle(thisNode, doc.baseUrl, styleID, doc.baseDir);
       }
       // Parse StyleMap nodes
-      nodes = responseXML.getElementsByTagName('StyleMap');
+      nodes = getElementsByTagNameNS(responseXML, kmlNS, 'StyleMap');
       for (i = 0; i < nodes.length; i++) {
         thisNode = nodes[i];
         var styleID = thisNode.getAttribute('id');
@@ -490,29 +503,29 @@ geoXML3.parser = function (options) {
       }
       var placemark, node, coords, path, marker, poly;
       var placemark, coords, path, pathLength, marker, polygonNodes, coordList;
-      var placemarkNodes = responseXML.getElementsByTagName('Placemark');
+      var placemarkNodes = getElementsByTagNameNS(responseXML, kmlNS, 'Placemark');
       for (pm = 0; pm < placemarkNodes.length; pm++) {
         // Init the placemark object
         node = placemarkNodes[pm];
-        var styleUrl = geoXML3.nodeValue(node.getElementsByTagName('styleUrl')[0]).split('#');
+        var styleUrl = nodeValue(getElementsByTagNameNS(node, kmlNS, 'styleUrl')[0]).split('#');
         placemark = {
-          name:         geoXML3.nodeValue(node.getElementsByTagName('name')[0]),
-          description:  geoXML3.nodeValue(node.getElementsByTagName('description')[0]),
+          name:         nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
+          description:  nodeValue(getElementsByTagNameNS(node, kmlNS, 'description')[0]),
           styleUrl:     styleUrl.join('#'),
           styleBaseUrl: styleUrl[0] ? cleanURL(doc.baseDir, styleUrl[0]) : doc.baseUrl,
           styleID:      styleUrl[1],
-          visibility:        geoXML3.getBooleanValue(node.getElementsByTagName('visibility')[0], true),
-          balloonVisibility: geoXML3.getBooleanValue(geoXML3.getElementsByTagNameNS(node, gx, 'balloonVisibility')[0], !parserOptions.suppressInfoWindows)
+          visibility:        getBooleanValue(getElementsByTagNameNS(node, kmlNS, 'visibility')[0], true),
+          balloonVisibility: getBooleanValue(getElementsByTagNameNS(node, gxNS, 'balloonVisibility')[0], !parserOptions.suppressInfoWindows)
         };
         placemark.style = (styles[placemark.styleBaseUrl] && styles[placemark.styleBaseUrl][placemark.styleID]) || clone(defaultStyle);
         // inline style overrides shared style
-        var inlineStyles = node.getElementsByTagName('Style');
+        var inlineStyles = getElementsByTagNameNS(node, kmlNS, 'Style');
         if (inlineStyles && (inlineStyles.length > 0)) {
           var style = processStyle(node, '{inline}', '{inline}');
           processStyleID(style);
           if (style) placemark.style = style;
         }
-        
+
         if (/^https?:\/\//.test(placemark.description)) {
           placemark.description = ['<a href="', placemark.description, '">', placemark.description, '</a>'].join('');
         }
@@ -530,34 +543,34 @@ geoXML3.parser = function (options) {
           val: {
             name:        placemark.name || '',
             description: placemark.description || '',
-            address:     geoXML3.nodeValue(node.getElementsByTagName('address')[0], ''),
+            address:     nodeValue(getElementsByTagNameNS(node, kmlNS, 'address')[0], ''),
             id:          node.getAttribute('id') || '',
-            Snippet:     geoXML3.nodeValue(node.getElementsByTagName('Snippet')[0], '')
+            Snippet:     nodeValue(getElementsByTagNameNS(node, kmlNS, 'Snippet')[0], '')
           },
           directions: [
-            'f=d',         
+            'f=d',
             'source=GeoXML3'
           ]
         };
 
         // add extended data to variables
-        var extDataNodes = node.getElementsByTagName('ExtendedData');
+        var extDataNodes = getElementsByTagNameNS(node, kmlNS, 'ExtendedData');
         if (!!extDataNodes && extDataNodes.length > 0) {
-          var dataNodes = extDataNodes[0].getElementsByTagName('Data');
+          var dataNodes = getElementsByTagNameNS(extDataNodes[0], kmlNS, 'Data');
           for (var d = 0; d < dataNodes.length; d++) {
             var dn    = dataNodes[d];
             var name  = dn.getAttribute('name');
             if (!name) continue;
-            var dName = geoXML3.nodeValue(dn.getElementsByTagName('displayName')[0], name);
-            var val   = geoXML3.nodeValue(dn.getElementsByTagName('value')[0]);
-            
+            var dName = nodeValue(getElementsByTagNameNS(dn, kmlNS, 'displayName')[0], name);
+            var val   = nodeValue(getElementsByTagNameNS(dn, kmlNS, 'value')[0]);
+
             placemark.vars.val[name]     = val;
             placemark.vars.display[name] = dName;
           }
         }
-        
+
         // process MultiGeometry
-        var GeometryNodes = node.getElementsByTagName('coordinates');
+        var GeometryNodes = getElementsByTagNameNS(node, kmlNS, 'coordinates');
         var Geometry = null;
         if (!!GeometryNodes && (GeometryNodes.length > 0)) {
           for (var gn=0;gn<GeometryNodes.length;gn++) {
@@ -576,7 +589,7 @@ geoXML3.parser = function (options) {
                   break;
                 case "LinearRing":
                   // Polygon/line
-                  polygonNodes = node.getElementsByTagName('Polygon');
+                  polygonNodes = getElementsByTagNameNS(node, kmlNS, 'Polygon');
                   // Polygon
                   if (!placemark.Polygon)
                     placemark.Polygon = [{
@@ -609,14 +622,14 @@ geoXML3.parser = function (options) {
         // call the custom placemark parse function if it is defined
         if (!!parserOptions.pmParseFn) parserOptions.pmParseFn(node, placemark);
         doc.placemarks.push(placemark);
-        
+
         // single marker
         if (placemark.Point) {
           if (!!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
           }
-          
+
           // Potential user-defined marker handler
           var pointCreateFunc = parserOptions.createMarker || createMarker;
           var found = false;
@@ -646,7 +659,7 @@ geoXML3.parser = function (options) {
           if (placemark.Polygon)    doc.gpolygons  = doc.gpolygons  || [];
           if (placemark.LineString) doc.gpolylines = doc.gpolylines || [];
         }
-          
+
         var polyCreateFunc = parserOptions.createPolygon    || createPolygon;
         var lineCreateFunc = parserOptions.createLineString || createPolyline;
         if (placemark.Polygon) {
@@ -689,24 +702,24 @@ geoXML3.parser = function (options) {
       }
       // doc.groundoverlays =[];
       var groundOverlay, color, transparency, overlay;
-      var groundNodes = responseXML.getElementsByTagName('GroundOverlay');
+      var groundNodes = getElementsByTagNameNS(responseXML, kmlNS, 'GroundOverlay');
       for (i = 0; i < groundNodes.length; i++) {
         node = groundNodes[i];
 
         // Detect images buried in KMZ files (and use a base64 encoded URL)
-        var gnUrl = cleanURL( doc.baseDir, geoXML3.nodeValue(node.getElementsByTagName('href')[0]) );
+        var gnUrl = cleanURL( doc.baseDir, nodeValue(getElementsByTagNameNS(node, kmlNS, 'href')[0]) );
         if (kmzMetaData[gnUrl]) gnUrl = kmzMetaData[gnUrl].dataUrl;
 
         // Init the ground overlay object
         groundOverlay = {
-          name:        geoXML3.nodeValue(node.getElementsByTagName('name')[0]),
-          description: geoXML3.nodeValue(node.getElementsByTagName('description')[0]),
+          name:        nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
+          description: nodeValue(getElementsByTagNameNS(node, kmlNS, 'description')[0]),
           icon: { href: gnUrl },
           latLonBox: {
-            north: parseFloat(geoXML3.nodeValue(node.getElementsByTagName('north')[0])),
-            east:  parseFloat(geoXML3.nodeValue(node.getElementsByTagName('east')[0])),
-            south: parseFloat(geoXML3.nodeValue(node.getElementsByTagName('south')[0])),
-            west:  parseFloat(geoXML3.nodeValue(node.getElementsByTagName('west')[0]))
+            north: parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'north')[0])),
+            east:  parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'east')[0])),
+            south: parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'south')[0])),
+            west:  parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'west')[0]))
           }
         };
         if (!!google.maps) {
@@ -718,7 +731,7 @@ geoXML3.parser = function (options) {
         }
 
         // Opacity is encoded in the color node
-        var colorNode = node.getElementsByTagName('color');
+        var colorNode = getElementsByTagNameNS(node, kmlNS, 'color');
         if (colorNode && colorNode.length > 0) {
           groundOverlay.opacity = geoXML3.getOpacity(nodeValue(colorNode[0]));
         } else {
@@ -767,21 +780,21 @@ geoXML3.parser = function (options) {
           doc.groundoverlays = overlays;
         }
       }
-      
+
       // Parse network links
       var networkLink;
       var docPath = document.location.pathname.split('/');
       docPath = docPath.splice(0, docPath.length - 1).join('/');
-      var linkNodes = responseXML.getElementsByTagName('NetworkLink');
+      var linkNodes = getElementsByTagNameNS(responseXML, kmlNS, 'NetworkLink');
       for (i = 0; i < linkNodes.length; i++) {
         node = linkNodes[i];
 
         // Init the network link object
         networkLink = {
-          name: geoXML3.nodeValue(node.getElementsByTagName('name')[0]),
+          name: nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
           link: {
-            href:        geoXML3.nodeValue(node.getElementsByTagName('href')[0]),
-            refreshMode: geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0])
+            href:        nodeValue(getElementsByTagNameNS(node, kmlNS, 'href')[0]),
+            refreshMode: nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0])
           }
         };
 
@@ -790,18 +803,18 @@ geoXML3.parser = function (options) {
           networkLink.link.refreshMode = 'onChange';
         }
         if (networkLink.link.refreshMode === 'onInterval') {
-          networkLink.link.refreshInterval = parseFloat(geoXML3.nodeValue(node.getElementsByTagName('refreshInterval')[0]));
+          networkLink.link.refreshInterval = parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshInterval')[0]));
           if (isNaN(networkLink.link.refreshInterval)) {
             networkLink.link.refreshInterval = 0;
           }
         } else if (networkLink.link.refreshMode === 'onChange') {
-          networkLink.link.viewRefreshMode = geoXML3.nodeValue(node.getElementsByTagName('viewRefreshMode')[0]);
+          networkLink.link.viewRefreshMode = nodeValue(getElementsByTagNameNS(node, kmlNS, 'viewRefreshMode')[0]);
           if (networkLink.link.viewRefreshMode === '') {
             networkLink.link.viewRefreshMode = 'never';
           }
           if (networkLink.link.viewRefreshMode === 'onStop') {
-            networkLink.link.viewRefreshTime = geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0]);
-            networkLink.link.viewFormat =      geoXML3.nodeValue(node.getElementsByTagName('refreshMode')[0]);
+            networkLink.link.viewRefreshTime = nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0]);
+            networkLink.link.viewFormat =      nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0]);
             if (networkLink.link.viewFormat === '') {
               networkLink.link.viewFormat = 'BBOX=[bboxWest],[bboxSouth],[bboxEast],[bboxNorth]';
             }
@@ -899,7 +912,7 @@ geoXML3.parser = function (options) {
   var processStyleID = function (style) {
     var icon = style.icon;
     if (!icon.href) return;
-    
+
     if (icon.img && !icon.img.complete) {
       // we're still waiting on the image loading (probably because we've been blocking since the declaration)
       // so, let's queue this function on the onload stack
@@ -910,7 +923,7 @@ geoXML3.parser = function (options) {
           icon.dim.h = this.height;
         }
         processStyleID(style);
-        
+
         // we will undoubtedly get some createMarker queuing, so set this up in advance
         for (var i = 0; i < icon.markerBacklog.length; i++) {
           var p = icon.markerBacklog[i][0];
@@ -935,7 +948,7 @@ geoXML3.parser = function (options) {
         icon.dim.h = 32;
       }
     }
-    
+
     // pre-scaled variables
     var rnd = Math.round;
     var scaled = {
@@ -958,18 +971,18 @@ geoXML3.parser = function (options) {
     }
     aY = rnd( ((icon.hotSpot.yunits === 'fraction') ? icon.dim.h : 1) * scaled.aY );  // insetPixels Y = pixels Y
     var iconAnchor = new google.maps.Point(aX, aY);
-    
+
     // Sizes
     // (NOTE: Scale is applied to entire image, not just the section of the icon palette.)
     var iconSize   = icon.dim.whGuess  ? null : new google.maps.Size(rnd(scaled.w),  rnd(scaled.h));
-    var iconScale  = icon.scale == 1.0 ? null : 
+    var iconScale  = icon.scale == 1.0 ? null :
                      icon.dim.whGuess  ?        new google.maps.Size(rnd(scaled.w),  rnd(scaled.h))
                                               : new google.maps.Size(rnd(scaled.iW), rnd(scaled.iH));
     var iconOrigin = new google.maps.Point(rnd(scaled.x), rnd(scaled.y));
-    
+
     // Detect images buried in KMZ files (and use a base64 encoded URL)
     if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
-    
+
     // Init the style object with the KML icon
     icon.marker = new google.maps.MarkerImage(
       icon.url,    // url
@@ -1012,7 +1025,7 @@ geoXML3.parser = function (options) {
       );
     } */
   }
-  
+
   var processStyles = function (doc) {
     for (var styleID in doc.styles) {
       processStyleID(doc.styles[styleID]);
@@ -1022,7 +1035,7 @@ geoXML3.parser = function (options) {
   var createMarker = function (placemark, doc) {
     // create a Marker to the map from a placemark KML object
     var icon = placemark.style.icon;
-    
+
     if ( !icon.marker && icon.img ) {
       // yay, single point of failure is holding up multiple markers...
       icon.markerBacklog = icon.markerBacklog || [];
@@ -1038,7 +1051,8 @@ geoXML3.parser = function (options) {
       zIndex:   Math.round(placemark.Point.coordinates[0].lat * -100000)<<5,
       icon:     icon.marker,
       shadow:   icon.shadow,
-      flat:     !icon.shadow
+      flat:     !icon.shadow,
+      visible:  placemark.visibility
     });
 
     // Create the marker on the map
@@ -1090,12 +1104,13 @@ geoXML3.parser = function (options) {
     // Load basic polyline properties
     var kmlStrokeColor = kmlColor(placemark.style.line.color, placemark.style.line.colorMode);
     var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
-      map:      parserOptions.map,
-      path: path,
-      strokeColor: kmlStrokeColor.color,
-      strokeWeight: placemark.style.line.width,
+      map:           parserOptions.map,
+      path:          path,
+      strokeColor:   kmlStrokeColor.color,
+      strokeWeight:  placemark.style.line.width,
       strokeOpacity: kmlStrokeColor.opacity,
-      title:    placemark.name
+      title:         placemark.name,
+      visible:       placemark.visibility
     });
     var p = new google.maps.Polyline(polyOptions);
     p.bounds = bounds;
@@ -1147,14 +1162,15 @@ geoXML3.parser = function (options) {
       kmlStrokeColor.opacity = 0.0;
     }
     var polyOptions = geoXML3.combineOptions(parserOptions.polygonOptions, {
-      map:      parserOptions.map,
-      paths:    paths,
-      title:    placemark.name,
-      strokeColor: kmlStrokeColor.color,
-      strokeWeight: strokeWeight,
+      map:           parserOptions.map,
+      paths:         paths,
+      title:         placemark.name,
+      strokeColor:   kmlStrokeColor.color,
+      strokeWeight:  strokeWeight,
       strokeOpacity: kmlStrokeColor.opacity,
-      fillColor: kmlFillColor.color,
-      fillOpacity: kmlFillColor.opacity
+      fillColor:     kmlFillColor.color,
+      fillOpacity:   kmlFillColor.opacity,
+      visible:       placemark.visibility
     });
     var p = new google.maps.Polygon(polyOptions);
     p.bounds = bounds;
@@ -1164,40 +1180,39 @@ geoXML3.parser = function (options) {
     placemark.polygon = p;
     return p;
   }
-  
+
   var createInfoWindow = function(placemark, doc, gObj) {
     var bStyle = placemark.style.balloon;
     var vars = placemark.vars;
-    
+
     if (!placemark.balloonVisibility || bStyle.displayMode === 'hide') return;
-    
+
     // define geDirections
     if (placemark.latlng) {
       vars.directions.push('sll=' + placemark.latlng.toUrlValue());
-      
+
       var url = 'http://maps.google.com/maps?' + vars.directions.join('&');
       var address = encodeURIComponent( vars.val.address || placemark.latlng.toUrlValue() ).replace(/\%20/g, '+');
-      
+
       vars.val.geDirections = '<a href="' + url + '&daddr=' + address + '" target=_blank>To Here</a> - <a href="' + url + '&saddr=' + address + '" target=_blank>From Here</a>';
-    } else {
-	vars.val.geDirections = "";
     }
-    
+    else vars.val.geDirections = '';
+
     // add in the variables
     var iwText = bStyle.text.replace(/\$\[(\w+(\/displayName)?)\]/g, function(txt, n, dn) { return dn ? vars.display[n] : vars.val[n]; });
     var classTxt = 'geoxml3_infowindow geoxml3_style_' + placemark.styleID;
-    
+
     // color styles
     var styleArr = [];
     if (bStyle.bgColor   != 'ffffffff') styleArr.push('background: ' + kmlColor(bStyle.bgColor  ).color + ';');
     if (bStyle.textColor != 'ff000000') styleArr.push('color: '      + kmlColor(bStyle.textColor).color + ';');
     var styleProp = styleArr.length ? ' style="' + styleArr.join(' ') + '"' : '';
-    
+
     var infoWindowOptions = geoXML3.combineOptions(parserOptions.infoWindowOptions, {
       content: '<div class="' + classTxt + '"' + styleProp + '>' + iwText + '</div>',
       pixelOffset: new google.maps.Size(0, 2)
     });
-    
+
     gObj.infoWindow = parserOptions.infoWindow || new google.maps.InfoWindow(infoWindowOptions);
     gObj.infoWindowOptions = infoWindowOptions;
 
@@ -1256,96 +1271,229 @@ geoXML3.log = function(msg) {
   } else { alert("log:"+msg); }
 };
 
-// Combine two options objects: a set of default values and a set of override values
+/**
+ * Creates a new parserOptions object.
+ * @class GeoXML3 parser options.
+ * @param {Object} overrides Any options you want to declare outside of the defaults should be included here.
+ * @property {google.maps.Map} map The API map on which geo objects should be rendered.
+ * @property {google.maps.MarkerOptions} markerOptions If the parser is adding Markers to the map itself, any options specified here will be applied to them.
+ * @property {google.maps.InfoWindowOptions} infoWindowOptions If the parser is adding Markers to the map itself, any options specified here will be applied to their attached InfoWindows.
+ * @property {ProjectedOverlay.options} overlayOptions If the parser is adding ProjectedOverlays to the map itself, any options specified here will be applied to them.
+ */
+geoXML3.parserOptions = function (overrides) {
+  this.map                 = null,
+  /** If true, the parser will automatically move the map to a best-fit of the geodata after parsing of a KML document completes.
+   * @type Boolean
+   * @default true
+   */
+  this.zoom                = true,
+  /**#@+ @type Boolean
+   *     @default false */
+  /** If true, only a single Marker created by the parser will be able to have its InfoWindow open at once (simulating the behavior of GMaps API v2). */
+  this.singleInfoWindow    = false,
+  /** If true, suppresses the rendering of info windows. */
+  this.suppressInfoWindows = false,
+  /**
+   * Control whether to process styles now or later.
+   *
+   * <p>By default, the parser only processes KML &lt;Style&gt; elements into their GMaps equivalents
+   * if it will be creating its own Markers (the createMarker option is null). Setting this option
+   * to true will force such processing to happen anyway, useful if you're going to be calling parser.createMarker
+   * yourself later. OTOH, leaving this option false removes runtime dependency on the GMaps API, enabling
+   * the use of geoXML3 as a standalone KML parser.</p>
+   */
+  this.processStyles       = false,
+  /**#@-*/
+
+  this.markerOptions       = {},
+  this.infoWindowOptions   = {},
+  this.overlayOptions      = {},
+
+  /**#@+ @event */
+  /** This function will be called when parsing of a KML document is complete.
+   * @param {geoXML3.parser#docs} doc Parsed KML data. */
+  this.afterParse          = null,
+  /** This function will be called when parsing of a KML document is complete.
+   * @param {geoXML3.parser#docs} doc Parsed KML data. */
+  this.failedParse         = null,
+  /**
+   * If supplied, this function will be called once for each marker <Placemark> in the KML document, instead of the parser adding its own Marker to the map.
+   * @param {geoXML3.parser.render#placemark} placemark Placemark object.
+   * @param {geoXML3.parser#docs} doc Parsed KML data.
+   */
+  this.createMarker        = null,
+  /**
+   * If supplied, this function will be called once for each <GroundOverlay> in the KML document, instead of the parser adding its own ProjectedOverlay to the map.
+   * @param {geoXML3.parser.render#groundOverlay} groundOverlay GroundOverlay object.
+   * @param {geoXML3.parser#docs} doc Parsed KML data.
+   */
+  this.createOverlay       = null
+  /**#@-*/
+
+  if (overrides) {
+    for (var prop in overrides) {
+      if (overrides.hasOwnProperty(prop)) this[prop] = overrides[prop];
+    }
+  }
+  return this;
+};
+
+/**
+ * Combine two options objects: a set of default values and a set of override values.
+ *
+ * @deprecated This has been replaced with {@link geoXML3.parserOptions#combineOptions}.
+ * @param {geoXML3.parserOptions|Object} overrides Override values.
+ * @param {geoXML3.parserOptions|Object} defaults Default values.
+ * @return {geoXML3.parserOptions} Combined result.
+ */
 geoXML3.combineOptions = function (overrides, defaults) {
   var result = {};
   if (!!overrides) {
     for (var prop in overrides) {
-      if (overrides.hasOwnProperty(prop)) {
-        result[prop] = overrides[prop];
-      }
+      if (overrides.hasOwnProperty(prop))                              result[prop] = overrides[prop];
     }
   }
   if (!!defaults) {
     for (prop in defaults) {
-      if (defaults.hasOwnProperty(prop) && (result[prop] === undefined)) {
-        result[prop] = defaults[prop];
-      }
+      if (defaults.hasOwnProperty(prop) && result[prop] === undefined) result[prop] = defaults[prop];
     }
   }
   return result;
 };
 
+/**
+ * Combine two options objects: a set of default values and a set of override values.
+ *
+ * @function
+ * @param {geoXML3.parserOptions|Object} overrides Override values.
+ * @param {geoXML3.parserOptions|Object} defaults Default values.
+ * @return {geoXML3.parserOptions} Combined result.
+ */
+geoXML3.parserOptions.prototype.combineOptions = geoXML3.combineOptions;
+
 // Retrieve an XML document from url and pass it to callback as a DOM document
 geoXML3.fetchers = [];
 
-// parse text to XML doc
 /**
- * Parses the given XML string and returns the parsed document in a
+ * Parses a XML string.
+ *
+ * <p>Parses the given XML string and returns the parsed document in a
  * DOM data structure. This function will return an empty DOM node if
- * XML parsing is not supported in this browser.
- * @param {string} str XML string.
+ * XML parsing is not supported in this browser.</p>
+ *
+ * @param {String} str XML string.
  * @return {Element|Document} DOM.
  */
 geoXML3.xmlParse = function (str) {
-  if (typeof ActiveXObject != 'undefined' && typeof GetObject != 'undefined') {
-    var doc = new ActiveXObject('Msxml2.DOMDocument');
+  if      (!!window.DOMParser)     return (new DOMParser()).parseFromString(str, 'text/xml');
+  else if (!!window.ActiveXObject) {
+    var doc;
+
+    // the many versions of IE's DOM parsers
+    var AXOs = [
+      'MSXML2.DOMDocument.6.0',
+      'MSXML2.DOMDocument.5.0',
+      'MSXML2.DOMDocument.4.0',
+      'MSXML2.DOMDocument.3.0',
+      'MSXML2.DOMDocument',
+      'Microsoft.XMLDOM',
+      'MSXML.DOMDocument'
+    ];
+    for (var i = 0; i < AXOs.length; i++) {
+      try      { doc = new ActiveXObject(AXOs[i]); break; }
+      catch(e) { continue; }
+    }
+    if (!doc) return createElement('div', null);
+
+    if (doc.async) doc.async = false;
     doc.loadXML(str);
     return doc;
-  }
-
-  if (typeof DOMParser != 'undefined') {
-    return (new DOMParser()).parseFromString(str, 'text/xml');
   }
 
   return createElement('div', null);
 }
 
+/**
+ * Fetches a XML document.
+ *
+ * <p>Fetches/parses the given XML URL and passes the parsed document (in a
+ * DOM data structure) to the given callback.  Documents are downloaded
+ * and parsed asynchronously.</p>
+ *
+ * @param {String} url URL of XML document.  Must be uncompressed XML only.
+ * @param {Function(Document)} callback Function to call when the document is processed.
+ */
 geoXML3.fetchXML = function (url, callback) {
-  function timeoutHandler() {
-    callback();
-  };
+  function timeoutHandler() { callback(); };
 
   var xhrFetcher = new Object();
-  if (!!geoXML3.fetchers.length) {
-    xhrFetcher = geoXML3.fetchers.pop();
-  } else {
-    if (!!window.XMLHttpRequest) {
-      xhrFetcher.fetcher = new window.XMLHttpRequest(); // Most browsers
-    } else if (!!window.ActiveXObject) {
-      xhrFetcher.fetcher = new window.ActiveXObject('Microsoft.XMLHTTP'); // Some IE
+  if      (!!geoXML3.fetchers.length) xhrFetcher = geoXML3.fetchers.pop();
+  else if (!!window.XMLHttpRequest)   xhrFetcher.fetcher = new window.XMLHttpRequest();  // Most browsers
+  else if (!!window.ActiveXObject) {                                                     // Some IE
+    // the many versions of IE's XML fetchers
+    var AXOs = [
+      'MSXML2.XMLHTTP.6.0',
+      'MSXML2.XMLHTTP.5.0',
+      'MSXML2.XMLHTTP.4.0',
+      'MSXML2.XMLHTTP.3.0',
+      'MSXML2.XMLHTTP',
+      'Microsoft.XMLHTTP',
+      'MSXML.XMLHTTP'
+    ];
+    for (var i = 0; i < AXOs.length; i++) {
+      try      { xhrFetcher.fetcher = new ActiveXObject(AXOs[i]); break; }
+      catch(e) { continue; }
+    }
+    if (!xhrFetcher.fetcher) {
+      geoXML3.log('Unable to create XHR object');
+      callback(null);
+      return null;
     }
   }
 
-  if (!xhrFetcher.fetcher) {
-    geoXML3.log('Unable to create XHR object');
-    callback(null);
-  } else {
-      if (xhrFetcher.fetcher.overrideMimeType) {
-        xhrFetcher.fetcher.overrideMimeType('text/xml');
+  if (!!xhrFetcher.fetcher.overrideMimeType) xhrFetcher.fetcher.overrideMimeType('text/xml');
+  xhrFetcher.fetcher.open('GET', url, true);
+  xhrFetcher.fetcher.onreadystatechange = function () {
+    if (xhrFetcher.fetcher.readyState === 4) {
+      // Retrieval complete
+      if (!!xhrFetcher.xhrtimeout) clearTimeout(xhrFetcher.xhrtimeout);
+      if (xhrFetcher.fetcher.status >= 400) {
+        geoXML3.log('HTTP error ' + xhrFetcher.fetcher.status + ' retrieving ' + url);
+        callback();
       }
-      xhrFetcher.fetcher.open('GET', url, true);
-      xhrFetcher.fetcher.onreadystatechange = function () {
-      if (xhrFetcher.fetcher.readyState === 4) {
-        // Retrieval complete
-        if (!!xhrFetcher.xhrtimeout)
-          clearTimeout(xhrFetcher.xhrtimeout);
-        if (xhrFetcher.fetcher.status >= 400) {
-          geoXML3.log('HTTP error ' + xhrFetcher.fetcher.status + ' retrieving ' + url);
-          callback();
-        } else {
-          // Returned successfully
-          callback(xhrFetcher.fetcher.responseXML);
-        }
-        // We're done with this fetcher object
-        geoXML3.fetchers.push(xhrFetcher);
+      // Returned successfully
+      else {
+        // Sometimes IE will get the data, but won't bother loading it as an XML doc
+        var xmlDoc = xhrFetcher.fetcher.responseXML;
+        if (xmlDoc && !xmlDoc.documentElement && !xmlDoc.ownerElement) xmlDoc.loadXML(xhrFetcher.fetcher.responseText);
+        callback(xmlDoc);
       }
-    };
-    xhrFetcher.xhrtimeout = setTimeout(timeoutHandler, 60000);
-    xhrFetcher.fetcher.send(null);
-  }
+
+      // We're done with this fetcher object
+      geoXML3.fetchers.push(xhrFetcher);
+    }
+  };
+
+  xhrFetcher.xhrtimeout = setTimeout(timeoutHandler, 60000);
+  xhrFetcher.fetcher.send(null);
+  return null;
 };
 
+/**
+ * Fetches a KMZ document.
+ *
+ * <p>Fetches/parses the given ZIP URL, parses each image file, and passes
+ * the parsed KML document to the given callback.  Documents are downloaded
+ * and parsed asynchronously, though the KML file is always passed after the
+ * images have been processed, in case the callback requires the image data.</p>
+ *
+ * @requires ZipFile.complete.js
+ * @param {String} url URL of KMZ document.  Must be a valid KMZ/ZIP archive.
+ * @param {Function(Document)} callback Function to call when the document is processed.
+ * @param {geoXML3.parser} parser A geoXML3.parser object.  This is used to populate the KMZ image data.
+ * @author Brendan Byrd
+ * @see http://code.google.com/apis/kml/documentation/kmzarchives.html
+ */
 geoXML3.fetchZIP = function (url, callback, parser) {
   // Just need a single 'new' declaration with a really long function...
   var zipFile = new ZipFile(url, function (zip) {
@@ -1370,7 +1518,7 @@ geoXML3.fetchZIP = function (url, callback, parser) {
     for (var i = 0; i < zip.entries.length; i++) {
       var name = zip.entries[i].name;
       if (!/\.kml$/.test(name)) continue;
-      
+
       KMLCount++;
       if (KMLCount == 1) KML = i;
       else {
@@ -1393,7 +1541,7 @@ geoXML3.fetchZIP = function (url, callback, parser) {
       if ((typeof entryContent.description == "string") && (entryContent.name == "Error")) {
         geoXML3.log('KMZ error extracting ' + mdUrl + ': ' + entryContent.description);
         callback();
-        return;        
+        return;
       }
 
       // MIME types that can be used in KML
@@ -1409,19 +1557,19 @@ geoXML3.fetchZIP = function (url, callback, parser) {
       parser.kmzMetaData[mdUrl].entry = entry;
       // data:image/gif;base64,R0lGODlhEAAOALMA...
       parser.kmzMetaData[mdUrl].dataUrl = 'data:' + mime + ';base64,' + base64Encode(entryContent);
-      
+
       // IE cannot handle GET requests beyond 2071 characters, even if it's an inline image
-      if ($.browser.msie && parser.kmzMetaData[mdUrl].dataUrl.length > 2071)
+      if (/msie/i.test(navigator.userAgent) && !/opera/i.test(navigator.userAgent) && parser.kmzMetaData[mdUrl].dataUrl.length > 2071)
         parser.kmzMetaData[mdUrl].dataUrl =
         // this is a simple IE icon; to hint at the problem...
-        'data:image/gif;base64,R0lGODlhDwAQAOMPADBPvSpQ1Dpoyz1p6FhwvU2A6ECP63CM04CWxYCk+V6x+UK++Jao3rvC3fj7+v///yH5BAEKAA8ALAAAAAAPABAAAASC8Mk5mwCAUMlWwcLRHEelLA' + 
+        'data:image/gif;base64,R0lGODlhDwAQAOMPADBPvSpQ1Dpoyz1p6FhwvU2A6ECP63CM04CWxYCk+V6x+UK++Jao3rvC3fj7+v///yH5BAEKAA8ALAAAAAAPABAAAASC8Mk5mwCAUMlWwcLRHEelLA' +
         'oGDMgzSsiyGCAhCETDPMh5XQCBwYBrNBIKWmg0MCQHj8MJU5IoroYCY6AAAgrDIbbQDGIK6DR5UPhlNo0JAlSUNAiDgH7eNAxEDWAKCQM2AAFheVxYAA0AIkFOJ1gBcQQaUQKKA5w7LpcEBwkJaKMUEQA7';
     };
     var kmlExtractCb = function(entry, entryContent) {
       if ((typeof entryContent.description == "string") && (entryContent.name == "Error")) {
         geoXML3.log('KMZ error extracting ' + mdUrl + ': ' + entryContent.description);
         callback();
-        return;        
+        return;
       }
 
       // check to see if the KML is the last file extracted
@@ -1461,11 +1609,17 @@ geoXML3.fetchZIP = function (url, callback, parser) {
 
 };
 
-// nodeValue: Extract the text value of a DOM node, with leading and trailing whitespace trimmed
+/**
+ * Extract the text value of a DOM node, with leading and trailing whitespace trimmed.
+ *
+ * @param {Element} node XML node/element.
+ * @param {Any} delVal Default value if the node doesn't exist.
+ * @return {String|Null}
+ */
 geoXML3.nodeValue = function(node, defVal) {
   var retStr="";
   if (!node) {
-    return (typeof defVal === 'undefined' || defVal === null) ? '' : defVal;
+    return (typeof defVal === 'undefined' || defVal === null) ? null : defVal;
   }
    if(node.nodeType==3||node.nodeType==4||node.nodeType==2){
       retStr+=node.nodeValue;
@@ -1477,33 +1631,88 @@ geoXML3.nodeValue = function(node, defVal) {
    return retStr;
 };
 
+/**
+ * Loosely translate various values of a DOM node to a boolean.
+ *
+ * @param {Element} node XML node/element.
+ * @param {Boolean} delVal Default value if the node doesn't exist.
+ * @return {Boolean|Null}
+ */
 geoXML3.getBooleanValue = function(node, defVal) {
   var nodeContents = geoXML3.nodeValue(node);
-  if (!nodeContents) return defVal || null;
-  if (nodeContents) nodeContents = parseInt(nodeContents);
+  if (nodeContents === null) return defVal || false;
+  nodeContents = parseInt(nodeContents);
   if (isNaN(nodeContents)) return true;
   if (nodeContents == 0) return false;
   else return true;
 }
 
-// IE8 doesn't define this, yay!
+/**
+ * Browser-normalized version of getElementsByTagNameNS.
+ *
+ * <p>Required because IE8 doesn't define it.</p>
+ *
+ * @param {Element|Document} node DOM object.
+ * @param {String} namespace Full namespace URL to search against.
+ * @param {String} tagname XML local tag name.
+ * @return {Array of Elements}
+ * @author Brendan Byrd
+ */
 geoXML3.getElementsByTagNameNS = function(node, namespace, tagname) {
- if (node && node.getElementsByTagNameNS) return node.getElementsByTagNameNS(namespace, tagname);
-  var result = [];
-  var root = node.ownerDocument.childNodes[1];
-  
-  if (!root.attributes) return new Array();
+  if (node && typeof node.getElementsByTagNameNS != 'undefined') return node.getElementsByTagNameNS(namespace, tagname);
+  if (!node) return [];
+
+  var root = node.documentElement || node.ownerDocument && node.ownerDocument.documentElement;
+  if (!root || !root.attributes) return [];
+
   // search for namespace prefix
   for (var i = 0; i < root.attributes.length; i++) {
     var attr = root.attributes[i];
-    if (attr.prefix === 'xmlns' && attr.nodeValue === namespace)
-      return node.getElementsByTagName(attr.baseName + ':' + tagname);
+    if      (attr.prefix   === 'xmlns' && attr.nodeValue === namespace) return node.getElementsByTagName(attr.baseName + ':' + tagname);
+    else if (attr.nodeName === 'xmlns' && attr.nodeValue === namespace) {
+      // default namespace
+      if (typeof node.selectNodes != 'undefined') {
+        // Newer IEs have the SelectionNamespace property that can be used with selectNodes
+        if (!root.ownerDocument.getProperty('SelectionNamespaces'))
+          root.ownerDocument.setProperty('SelectionNamespaces', "xmlns:defaultNS='" + namespace + "'");
+        return node.selectNodes('.//defaultNS:' + tagname);
+      }
+      else {
+        // Otherwise, you can still try to tack on the 'xmlns' attribute to root
+        root.setAttribute('xmlns:defaultNS', namespace);
+        return node.getElementsByTagName('defaultNS:' + tagname);
+      }
+    }
   }
-  return new Array(); // empty result set
+  return geoXML3.getElementsByTagName(node, tagname);  // try the unqualified version
 };
 
+/**
+ * Browser-normalized version of getElementsByTagName.
+ *
+ * <p>Required because MSXML 6.0 will treat this function as a NS-qualified function,
+ * despite the missing NS parameter.</p>
+ *
+ * @param {Element|Document} node DOM object.
+ * @param {String} tagname XML local tag name.
+ * @return {Array of Elements}
+ * @author Brendan Byrd
+ */
+geoXML3.getElementsByTagName = function(node, tagname) {
+  if (node && typeof node.getElementsByTagNameNS != 'undefined') return node.getElementsByTagName(tagname);  // if it has both functions, it should be accurate
+  if (node && typeof node.selectNodes != 'undefined')            return node.selectNodes(".//*[local-name()='" + tagname + "']");
+  return node.getElementsByTagName(tagname);  // hope for the best...
+}
 
-// toAbsUrl: Turn a directory + relative URL into an absolute one
+/**
+ * Turn a directory + relative URL into an absolute one.
+ *
+ * @private
+ * @param {String} d Base directory.
+ * @param {String} s Relative URL.
+ * @return {String} Absolute URL.
+ * @author Brendan Byrd
+ */
 var toAbsURL = function (d, s) {
   var p, f, i;
   var h = location.protocol + "://" + location.host;
@@ -1522,14 +1731,39 @@ var toAbsURL = function (d, s) {
   return h + p + '/' + s;
 }
 
-//dehostUrl: Remove current host from URL (change it to a root-based relative URL)
+/**
+ * Remove current host from URL
+ *
+ * @private
+ * @param {String} s Absolute or relative URL.
+ * @return {String} Root-based relative URL.
+ * @author Brendan Byrd
+ */
 var dehostURL = function (s) {
   var h = location.protocol + "://" + location.host;
   h = h.replace(/([\.\\\+\*\?\[\^\]\$\(\)])/g, '\\$1');  // quotemeta
   return s.replace(new RegExp('^' + h, 'i'), '');
 }
 
+/**
+ * Removes all query strings, #IDs, '../' references, and
+ * hosts from a URL.
+ *
+ * @private
+ * @param {String} d Base directory.
+ * @param {String} s Absolute or relative URL.
+ * @return {String} Root-based relative URL.
+ * @author Brendan Byrd
+ */
 var cleanURL  = function (d, s) { return dehostURL(toAbsURL(d ? d.split('#')[0].split('?')[0] : defileURL(location.pathname), s ? s.split('#')[0].split('?')[0] : '')); }
+/**
+ * Remove filename from URL
+ *
+ * @private
+ * @param {String} s Relative URL.
+ * @return {String} Base directory.
+ * @author Brendan Byrd
+ */
 var defileURL = function (s)    { return s ? s.substr(0, s.lastIndexOf('/') + 1) : '/'; }
 
 
@@ -1578,7 +1812,14 @@ Array.prototype.indexOfObjWithItem = function (name, item, fromIndex) {
   return -1;
 };
 
-// borrowed from jquery.base64.js, with some "Array as input" corrections
+/**
+ * Borrowed from jquery.base64.js, with some "Array as input" corrections
+ *
+ * @private
+ * @param {Array of charCodes} input An array of byte ASCII codes (0-255).
+ * @return {String} A base64-encoded string.
+ * @author Brendan Byrd
+ */
 var base64Encode = function(input) {
   var keyString = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
   var output = "";
