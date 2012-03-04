@@ -227,32 +227,41 @@ geoXML3.parser = function (options) {
   var nodeValue              = geoXML3.nodeValue;
   var getBooleanValue        = geoXML3.getBooleanValue;
   var getElementsByTagNameNS = geoXML3.getElementsByTagNameNS;
+  var getElementsByTagName   = geoXML3.getElementsByTagName;
+
+function processStyleUrl(node) {
+  var styleUrlStr = nodeValue(getElementsByTagName(node, 'styleUrl')[0]);
+  if (!!styleUrlStr && styleUrlStr.indexOf('#') != -1) 
+    var styleUrl = styleUrlStr.split('#');
+  else var styleUrl = ["",""];
+  return styleUrl;
+}
 
   function processStyle(thisNode, baseUrl, styleID, baseDir) {
     var style = (baseUrl === '{inline}') ? clone(defaultStyle) : (styles[baseUrl][styleID] = styles[baseUrl][styleID] || clone(defaultStyle));
 
-    var styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'BalloonStyle');
+    var styleNodes = getElementsByTagName(thisNode, 'BalloonStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.balloon.bgColor     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'bgColor')[0],     style.balloon.bgColor);
-      style.balloon.textColor   = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'textColor')[0],   style.balloon.textColor);
-      style.balloon.text        = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'text')[0],        style.balloon.text);
-      style.balloon.displayMode = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'displayMode')[0], style.balloon.displayMode);
+      style.balloon.bgColor     = nodeValue(getElementsByTagName(styleNodes[0], 'bgColor')[0],     style.balloon.bgColor);
+      style.balloon.textColor   = nodeValue(getElementsByTagName(styleNodes[0], 'textColor')[0],   style.balloon.textColor);
+      style.balloon.text        = nodeValue(getElementsByTagName(styleNodes[0], 'text')[0],        style.balloon.text);
+      style.balloon.displayMode = nodeValue(getElementsByTagName(styleNodes[0], 'displayMode')[0], style.balloon.displayMode);
     }
 
     // style.list = (unsupported; doesn't make sense in Google Maps)
 
-    var styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'IconStyle');
+    var styleNodes = getElementsByTagName(thisNode, 'IconStyle');
     if (!!styleNodes && styleNodes.length > 0) {
       var icon = style.icon;
 
-      icon.scale = parseFloat(nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'scale')[0], icon.scale));
+      icon.scale = parseFloat(nodeValue(getElementsByTagName(styleNodes[0], 'scale')[0], icon.scale));
       // style.icon.heading   = (unsupported; not supported in API)
       // style.icon.color     = (unsupported; not supported in API)
       // style.icon.colorMode = (unsupported; not supported in API)
 
-      styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'Icon');
+      styleNodes = getElementsByTagName(thisNode, 'Icon');
       if (!!styleNodes && styleNodes.length > 0) {
-        icon.href = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'href')[0]);
+        icon.href = nodeValue(getElementsByTagName(styleNodes[0], 'href')[0]);
         icon.url  = cleanURL(baseDir, icon.href);
         // Detect images buried in KMZ files (and use a base64 encoded URL)
         if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
@@ -265,7 +274,7 @@ geoXML3.parser = function (options) {
           h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'h')[0], icon.dim.h))
         };
 
-        styleNodes = getElementsByTagNameNS(styleNodes[0], kmlNS, 'hotSpot')[0];
+        styleNodes = getElementsByTagName(styleNodes[0], 'hotSpot')[0];
         if (!!styleNodes && styleNodes.length > 0) {
           icon.hotSpot = {
             x:      styleNodes[0].getAttribute('x'),
@@ -300,23 +309,23 @@ geoXML3.parser = function (options) {
 
     // style.label = (unsupported; may be possible but not with API)
 
-    styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'LineStyle');
+    styleNodes = getElementsByTagName(thisNode, 'LineStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.line.color     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'color')[0],     style.line.color);
-      style.line.colorMode = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'colorMode')[0], style.line.colorMode);
-      style.line.width     = nodeValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'width')[0],     style.line.width);
+      style.line.color     = nodeValue(getElementsByTagName(styleNodes[0], 'color')[0],     style.line.color);
+      style.line.colorMode = nodeValue(getElementsByTagName(styleNodes[0], 'colorMode')[0], style.line.colorMode);
+      style.line.width     = nodeValue(getElementsByTagName(styleNodes[0], 'width')[0],     style.line.width);
       // style.line.outerColor      = (unsupported; not supported in API)
       // style.line.outerWidth      = (unsupported; not supported in API)
       // style.line.physicalWidth   = (unsupported; unneccesary in Google Maps)
       // style.line.labelVisibility = (unsupported; possible to implement)
     }
 
-    styleNodes = getElementsByTagNameNS(thisNode, kmlNS, 'PolyStyle');
+    styleNodes = getElementsByTagName(thisNode, 'PolyStyle');
     if (!!styleNodes && styleNodes.length > 0) {
-      style.poly.color     = nodeValue(      getElementsByTagNameNS(styleNodes[0], kmlNS, 'color')[0],     style.poly.color);
-      style.poly.colorMode = nodeValue(      getElementsByTagNameNS(styleNodes[0], kmlNS, 'colorMode')[0], style.poly.colorMode);
-      style.poly.outline   = getBooleanValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'outline')[0],   style.poly.outline);
-      style.poly.fill      = getBooleanValue(getElementsByTagNameNS(styleNodes[0], kmlNS, 'fill')[0],      style.poly.fill);
+      style.poly.color     = nodeValue(      getElementsByTagName(styleNodes[0], 'color')[0],     style.poly.color);
+      style.poly.colorMode = nodeValue(      getElementsByTagName(styleNodes[0], 'colorMode')[0], style.poly.colorMode);
+      style.poly.outline   = getBooleanValue(getElementsByTagName(styleNodes[0], 'outline')[0],   style.poly.outline);
+      style.poly.fill      = getBooleanValue(getElementsByTagName(styleNodes[0], 'fill')[0],      style.poly.fill);
     }
     return style;
   }
@@ -332,14 +341,14 @@ geoXML3.parser = function (options) {
   }
 
   function processStyleMap(thisNode, baseUrl, styleID, baseDir) {
-    var pairs = getElementsByTagNameNS(thisNode, kmlNS, 'Pair');
+    var pairs = getElementsByTagName(thisNode, 'Pair');
     var map = new Object();
 
     // add each key to the map
     for (var pr=0;pr<pairs.length;pr++) {
-      var pairKey      = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'key')[0]);
-      var pairStyle    = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'Style')[0]);
-      var pairStyleUrl = nodeValue(getElementsByTagNameNS(pairs[pr], kmlNS, 'styleUrl')[0]).split('#');
+      var pairKey      = nodeValue(getElementsByTagName(pairs[pr], 'key')[0]);
+      var pairStyle    = nodeValue(getElementsByTagName(pairs[pr], 'Style')[0]);
+      var pairStyleUrl = processStyleUrl(pairs[pr]);
       var pairStyleBaseUrl = pairStyleUrl[0] ? cleanURL(baseDir, pairStyleUrl[0]) : baseUrl;
       var pairStyleID      = pairStyleUrl[1];
 
@@ -361,10 +370,10 @@ geoXML3.parser = function (options) {
   }
 
   function processPlacemarkCoords(node, tag) {
-    var parent = getElementsByTagNameNS(node, kmlNS, tag);
+    var parent = getElementsByTagName(node, tag);
     var coordListA = [];
     for (var i=0; i<parent.length; i++) {
-      var coordNodes = getElementsByTagNameNS(parent[i], kmlNS, 'coordinates');
+      var coordNodes = getElementsByTagName(parent[i], 'coordinates');
       if (!coordNodes) {
         if (coordListA.length > 0) {
           break;
@@ -432,7 +441,7 @@ geoXML3.parser = function (options) {
       doc.gpolylines      = [];
 
       // Check for dependent KML files
-      var nodes = getElementsByTagNameNS(responseXML, kmlNS, 'styleUrl');
+      var nodes = getElementsByTagName(responseXML, 'styleUrl');
       var docSet = doc.internals.docSet;
 
       for (var i = 0; i < nodes.length; i++) {
@@ -475,7 +484,7 @@ geoXML3.parser = function (options) {
       // Parse styles
       doc.styles = styles[doc.baseUrl] = styles[doc.baseUrl] || {};
       var styleID, styleNodes;
-      nodes = getElementsByTagNameNS(responseXML, kmlNS, 'Style');
+      nodes = getElementsByTagName(responseXML, 'Style');
       nodeCount = nodes.length;
       for (i = 0; i < nodeCount; i++) {
         thisNode = nodes[i];
@@ -483,7 +492,7 @@ geoXML3.parser = function (options) {
         if (!!styleID) processStyle(thisNode, doc.baseUrl, styleID, doc.baseDir);
       }
       // Parse StyleMap nodes
-      nodes = getElementsByTagNameNS(responseXML, kmlNS, 'StyleMap');
+      nodes = getElementsByTagName(responseXML, 'StyleMap');
       for (i = 0; i < nodes.length; i++) {
         thisNode = nodes[i];
         var styleID = thisNode.getAttribute('id');
@@ -503,23 +512,23 @@ geoXML3.parser = function (options) {
       }
       var placemark, node, coords, path, marker, poly;
       var placemark, coords, path, pathLength, marker, polygonNodes, coordList;
-      var placemarkNodes = getElementsByTagNameNS(responseXML, kmlNS, 'Placemark');
+      var placemarkNodes = getElementsByTagName(responseXML, 'Placemark');
       for (pm = 0; pm < placemarkNodes.length; pm++) {
         // Init the placemark object
         node = placemarkNodes[pm];
-        var styleUrl = nodeValue(getElementsByTagNameNS(node, kmlNS, 'styleUrl')[0]).split('#');
+        var styleUrl = processStyleUrl(node);
         placemark = {
-          name:         nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
-          description:  nodeValue(getElementsByTagNameNS(node, kmlNS, 'description')[0]),
+          name:         nodeValue(getElementsByTagName(node, 'name')[0]),
+          description:  nodeValue(getElementsByTagName(node, 'description')[0]),
           styleUrl:     styleUrl.join('#'),
           styleBaseUrl: styleUrl[0] ? cleanURL(doc.baseDir, styleUrl[0]) : doc.baseUrl,
           styleID:      styleUrl[1],
-          visibility:        getBooleanValue(getElementsByTagNameNS(node, kmlNS, 'visibility')[0], true),
+          visibility:        getBooleanValue(getElementsByTagName(node, 'visibility')[0], true),
           balloonVisibility: getBooleanValue(getElementsByTagNameNS(node, gxNS, 'balloonVisibility')[0], !parserOptions.suppressInfoWindows)
         };
         placemark.style = (styles[placemark.styleBaseUrl] && styles[placemark.styleBaseUrl][placemark.styleID]) || clone(defaultStyle);
         // inline style overrides shared style
-        var inlineStyles = getElementsByTagNameNS(node, kmlNS, 'Style');
+        var inlineStyles = getElementsByTagName(node, 'Style');
         if (inlineStyles && (inlineStyles.length > 0)) {
           var style = processStyle(node, '{inline}', '{inline}');
           processStyleID(style);
@@ -543,9 +552,9 @@ geoXML3.parser = function (options) {
           val: {
             name:        placemark.name || '',
             description: placemark.description || '',
-            address:     nodeValue(getElementsByTagNameNS(node, kmlNS, 'address')[0], ''),
+            address:     nodeValue(getElementsByTagName(node, 'address')[0], ''),
             id:          node.getAttribute('id') || '',
-            Snippet:     nodeValue(getElementsByTagNameNS(node, kmlNS, 'Snippet')[0], '')
+            Snippet:     nodeValue(getElementsByTagName(node, 'Snippet')[0], '')
           },
           directions: [
             'f=d',
@@ -570,7 +579,7 @@ geoXML3.parser = function (options) {
         }
 
         // process MultiGeometry
-        var GeometryNodes = getElementsByTagNameNS(node, kmlNS, 'coordinates');
+        var GeometryNodes = getElementsByTagName(node, 'coordinates');
         var Geometry = null;
         if (!!GeometryNodes && (GeometryNodes.length > 0)) {
           for (var gn=0;gn<GeometryNodes.length;gn++) {
@@ -589,7 +598,7 @@ geoXML3.parser = function (options) {
                   break;
                 case "LinearRing":
                   // Polygon/line
-                  polygonNodes = getElementsByTagNameNS(node, kmlNS, 'Polygon');
+                  polygonNodes = getElementsByTagName(node, 'Polygon');
                   // Polygon
                   if (!placemark.Polygon)
                     placemark.Polygon = [{
@@ -702,24 +711,24 @@ geoXML3.parser = function (options) {
       }
       // doc.groundoverlays =[];
       var groundOverlay, color, transparency, overlay;
-      var groundNodes = getElementsByTagNameNS(responseXML, kmlNS, 'GroundOverlay');
+      var groundNodes = getElementsByTagName(responseXML, 'GroundOverlay');
       for (i = 0; i < groundNodes.length; i++) {
         node = groundNodes[i];
 
         // Detect images buried in KMZ files (and use a base64 encoded URL)
-        var gnUrl = cleanURL( doc.baseDir, nodeValue(getElementsByTagNameNS(node, kmlNS, 'href')[0]) );
+        var gnUrl = cleanURL( doc.baseDir, nodeValue(getElementsByTagName(node, 'href')[0]) );
         if (kmzMetaData[gnUrl]) gnUrl = kmzMetaData[gnUrl].dataUrl;
 
         // Init the ground overlay object
         groundOverlay = {
-          name:        nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
-          description: nodeValue(getElementsByTagNameNS(node, kmlNS, 'description')[0]),
+          name:        nodeValue(getElementsByTagName(node, 'name')[0]),
+          description: nodeValue(getElementsByTagName(node, 'description')[0]),
           icon: { href: gnUrl },
           latLonBox: {
-            north: parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'north')[0])),
-            east:  parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'east')[0])),
-            south: parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'south')[0])),
-            west:  parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'west')[0]))
+            north: parseFloat(nodeValue(getElementsByTagName(node, 'north')[0])),
+            east:  parseFloat(nodeValue(getElementsByTagName(node, 'east')[0])),
+            south: parseFloat(nodeValue(getElementsByTagName(node, 'south')[0])),
+            west:  parseFloat(nodeValue(getElementsByTagName(node, 'west')[0]))
           }
         };
         if (!!google.maps) {
@@ -731,7 +740,7 @@ geoXML3.parser = function (options) {
         }
 
         // Opacity is encoded in the color node
-        var colorNode = getElementsByTagNameNS(node, kmlNS, 'color');
+        var colorNode = getElementsByTagName(node, 'color');
         if (colorNode && colorNode.length > 0) {
           groundOverlay.opacity = geoXML3.getOpacity(nodeValue(colorNode[0]));
         } else {
@@ -785,16 +794,16 @@ geoXML3.parser = function (options) {
       var networkLink;
       var docPath = document.location.pathname.split('/');
       docPath = docPath.splice(0, docPath.length - 1).join('/');
-      var linkNodes = getElementsByTagNameNS(responseXML, kmlNS, 'NetworkLink');
+      var linkNodes = getElementsByTagName(responseXML, 'NetworkLink');
       for (i = 0; i < linkNodes.length; i++) {
         node = linkNodes[i];
 
         // Init the network link object
         networkLink = {
-          name: nodeValue(getElementsByTagNameNS(node, kmlNS, 'name')[0]),
+          name: nodeValue(getElementsByTagName(node, 'name')[0]),
           link: {
-            href:        nodeValue(getElementsByTagNameNS(node, kmlNS, 'href')[0]),
-            refreshMode: nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0])
+            href:        nodeValue(getElementsByTagName(node, 'href')[0]),
+            refreshMode: nodeValue(getElementsByTagName(node, 'refreshMode')[0])
           }
         };
 
@@ -803,18 +812,18 @@ geoXML3.parser = function (options) {
           networkLink.link.refreshMode = 'onChange';
         }
         if (networkLink.link.refreshMode === 'onInterval') {
-          networkLink.link.refreshInterval = parseFloat(nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshInterval')[0]));
+          networkLink.link.refreshInterval = parseFloat(nodeValue(getElementsByTagName(node, 'refreshInterval')[0]));
           if (isNaN(networkLink.link.refreshInterval)) {
             networkLink.link.refreshInterval = 0;
           }
         } else if (networkLink.link.refreshMode === 'onChange') {
-          networkLink.link.viewRefreshMode = nodeValue(getElementsByTagNameNS(node, kmlNS, 'viewRefreshMode')[0]);
+          networkLink.link.viewRefreshMode = nodeValue(getElementsByTagName(node, 'viewRefreshMode')[0]);
           if (networkLink.link.viewRefreshMode === '') {
             networkLink.link.viewRefreshMode = 'never';
           }
           if (networkLink.link.viewRefreshMode === 'onStop') {
-            networkLink.link.viewRefreshTime = nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0]);
-            networkLink.link.viewFormat =      nodeValue(getElementsByTagNameNS(node, kmlNS, 'refreshMode')[0]);
+            networkLink.link.viewRefreshTime = nodeValue(getElementsByTagName(node, 'refreshMode')[0]);
+            networkLink.link.viewFormat =      nodeValue(getElementsByTagName(node, 'refreshMode')[0]);
             if (networkLink.link.viewFormat === '') {
               networkLink.link.viewFormat = 'BBOX=[bboxWest],[bboxSouth],[bboxEast],[bboxNorth]';
             }
