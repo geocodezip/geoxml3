@@ -90,6 +90,7 @@
         if (ext == ".rels") { return JSIO.FileType.Text; }
         if (ext == ".css")  { return JSIO.FileType.Text; }
         if (ext == ".cs")   { return JSIO.FileType.Text; }
+        if (ext == ".asp")  { return JSIO.FileType.Text; }
 
         return JSIO.FileType.Unknown;
     };
