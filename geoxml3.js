@@ -808,7 +808,7 @@ function processStyleUrl(node) {
         };
 
         // Establish the specific refresh mode
-        if (networkLink.link.refreshMode === '') {
+        if (!networkLink.link.refreshMode) {
           networkLink.link.refreshMode = 'onChange';
         }
         if (networkLink.link.refreshMode === 'onInterval') {
@@ -818,13 +818,13 @@ function processStyleUrl(node) {
           }
         } else if (networkLink.link.refreshMode === 'onChange') {
           networkLink.link.viewRefreshMode = nodeValue(getElementsByTagName(node, 'viewRefreshMode')[0]);
-          if (networkLink.link.viewRefreshMode === '') {
+          if (!networkLink.link.viewRefreshMode) {
             networkLink.link.viewRefreshMode = 'never';
           }
           if (networkLink.link.viewRefreshMode === 'onStop') {
             networkLink.link.viewRefreshTime = nodeValue(getElementsByTagName(node, 'refreshMode')[0]);
             networkLink.link.viewFormat =      nodeValue(getElementsByTagName(node, 'refreshMode')[0]);
-            if (networkLink.link.viewFormat === '') {
+            if (!networkLink.link.viewFormat) {
               networkLink.link.viewFormat = 'BBOX=[bboxWest],[bboxSouth],[bboxEast],[bboxNorth]';
             }
           }
