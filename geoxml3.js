@@ -563,15 +563,15 @@ function processStyleUrl(node) {
         };
 
         // add extended data to variables
-        var extDataNodes = getElementsByTagNameNS(node, kmlNS, 'ExtendedData');
+        var extDataNodes = getElementsByTagName(node, 'ExtendedData');
         if (!!extDataNodes && extDataNodes.length > 0) {
-          var dataNodes = getElementsByTagNameNS(extDataNodes[0], kmlNS, 'Data');
+          var dataNodes = getElementsByTagName(extDataNodes[0], 'Data');
           for (var d = 0; d < dataNodes.length; d++) {
             var dn    = dataNodes[d];
             var name  = dn.getAttribute('name');
             if (!name) continue;
-            var dName = nodeValue(getElementsByTagNameNS(dn, kmlNS, 'displayName')[0], name);
-            var val   = nodeValue(getElementsByTagNameNS(dn, kmlNS, 'value')[0]);
+            var dName = nodeValue(getElementsByTagName(dn, 'displayName')[0], name);
+            var val   = nodeValue(getElementsByTagName(dn, 'value')[0]);
 
             placemark.vars.val[name]     = val;
             placemark.vars.display[name] = dName;
@@ -1709,7 +1709,7 @@ geoXML3.getElementsByTagNameNS = function(node, namespace, tagname) {
  */
 geoXML3.getElementsByTagName = function(node, tagname) {
   if (node && typeof node.getElementsByTagNameNS != 'undefined') return node.getElementsByTagName(tagname);  // if it has both functions, it should be accurate
-  if (node && typeof node.selectNodes != 'undefined')            return node.selectNodes(".//*[local-name()='" + tagname + "']");
+//  if (node && typeof node.selectNodes != 'undefined')            return node.selectNodes(".//*[local-name()='" + tagname + "']");
   return node.getElementsByTagName(tagname);  // hope for the best...
 }
 
