@@ -1472,10 +1472,13 @@ geoXML3.fetchXML = function (url, callback) {
       }
       // Returned successfully
       else {
+        if (xhrFetcher.fetcher.responseXML) {
         // Sometimes IE will get the data, but won't bother loading it as an XML doc
         var xmlDoc = xhrFetcher.fetcher.responseXML;
         if (xmlDoc && !xmlDoc.documentElement && !xmlDoc.ownerElement) xmlDoc.loadXML(xhrFetcher.fetcher.responseText);
-        callback(xmlDoc);
+          callback(xmlDoc);          
+        } else // handle valid xml sent with wrong MIME type 
+          callback(geoXML3.xmlParse(xhrFetcher.fetcher.responseText));
       }
 
       // We're done with this fetcher object
