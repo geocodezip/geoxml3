@@ -721,21 +721,19 @@ var randomColor = function(){
               'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
               shadowSize,
               zeroPoint,
-              shadowPoint);
+              shadowPoint,
+              shadowSize);
         } else if (style.href.indexOf('-pushpin.png') > -1) {
           // Pushpin marker icon
           style.shadow = new google.maps.MarkerImage(
             'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',
             shadowSize,
             zeroPoint,
-            shadowPoint);
+            shadowPoint,
+            shadowSize);
         } else {
-          // Other MyMaps KML standard icon
-          style.shadow = new google.maps.MarkerImage(
-            style.href.replace('.png', '.shadow.png'),
-            shadowSize,
-            zeroPoint,
-            shadowPoint);
+          // don't guess, fails with optimized CANVAS markers
+	    style.shadow = null;
         }
       }
   }
