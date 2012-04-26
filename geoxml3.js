@@ -732,8 +732,13 @@ var randomColor = function(){
             shadowPoint,
             shadowSize);
         } else {
-          // don't guess, fails with optimized CANVAS markers
-	    style.shadow = null;
+          // Other MyMaps KML standard icon
+          style.shadow = new google.maps.MarkerImage(
+            style.href.replace('.png', '.shadow.png'),	      		   
+            shadowSize,	   					   
+            zeroPoint,					
+            shadowPoint,
+            shadowSize);
         }
       }
   }
