@@ -736,21 +736,6 @@
                         var fileContents = binStream.req.response;
                         binStream.length = fileContents.byteLength;
                         binStream.array = new Uint8Array(fileContents);
-/* patch for Opera */
-    if (/opera/i.test(navigator.userAgent) && 
-        // make sure it is still broken,
-	// the first 4 bytes will contain the zip file signature
-	// for the geoxml3 use case (so bytes 1 & 3 will not be 0)
-        (binStream.array[1] == 0) && (binStream.array[3] == 0))
-    {    
-	fixedArray = new Uint8Array(binStream.length/2);
-        for (var i=0; i<binStream.length; i+=2) {
-            fixedArray[i/2]=binStream.array[i];
-        }
-	binStream.array = fixedArray;
-        binStream.length = binStream.length/2;
-    }
-
                         if (typeof binStream.callback == "function") binStream.callback(binStream);
                     }
                     else {
@@ -759,7 +744,8 @@
                 }
             };
             this.req.responseType = 'arraybuffer';
-            this.req.overrideMimeType('text/plain; charset=x-user-defined');
+            // http://stackoverflow.com/questions/11284728/how-do-i-access-8-bit-binary-data-from-javascript-in-opera
+            this.req.overrideMimeType('application/octet-stream; charset=x-user-defined');
             this.req.send(null);
         };
 
