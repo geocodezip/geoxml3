@@ -1394,29 +1394,14 @@ geoXML3.fetchers = [];
  * @return {Element|Document} DOM.
  */
 geoXML3.xmlParse = function (str) {
-  if      (!!window.DOMParser)     return (new DOMParser()).parseFromString(str, 'text/xml');
-  else if (!!window.ActiveXObject) {
-    var doc;
-
-    // the many versions of IE's DOM parsers
-    var AXOs = [
-      'MSXML2.DOMDocument.6.0',
-      'MSXML2.DOMDocument.5.0',
-      'MSXML2.DOMDocument.4.0',
-      'MSXML2.DOMDocument.3.0',
-      'MSXML2.DOMDocument',
-      'Microsoft.XMLDOM',
-      'MSXML.DOMDocument'
-    ];
-    for (var i = 0; i < AXOs.length; i++) {
-      try      { doc = new ActiveXObject(AXOs[i]); break; }
-      catch(e) { continue; }
-    }
-    if (!doc) return createElement('div', null);
-
-    if (doc.async) doc.async = false;
+  if (typeof ActiveXObject != 'undefined' && typeof GetObject != 'undefined') {
+    var doc = new ActiveXObject('Microsoft.XMLDOM');
     doc.loadXML(str);
     return doc;
+  }
+
+  if (typeof DOMParser != 'undefined') {
+    return (new DOMParser()).parseFromString(str, 'text/xml');
   }
 
   return createElement('div', null);
