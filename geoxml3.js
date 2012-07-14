@@ -649,7 +649,7 @@ var coordListA = [];
       if (doc.internals.remaining === 0) {
         // We're done processing this set of KML documents
         // Options that get invoked after parsing completes
-        if (parserOptions.zoom && !!doc.internals.bounds) {
+        if (parserOptions.zoom && !!doc.internals.bounds && !!parserOptions.map) {
           parserOptions.map.fitBounds(doc.internals.bounds); 
         }
         if (parserOptions.afterParse) {
