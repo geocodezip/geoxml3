@@ -923,7 +923,7 @@ function processStyleUrl(node) {
     var icon = style.icon;
     if (!icon.href) return;
 
-    if (icon.img && !icon.img.complete) {
+    if (icon.img && !icon.img.complete && (icon.dim.w < 0) && (icon.dim.h < 0) ) {
       // we're still waiting on the image loading (probably because we've been blocking since the declaration)
       // so, let's queue this function on the onload stack
       icon.markerBacklog = [];
@@ -1235,6 +1235,22 @@ function processStyleUrl(node) {
       if      (e && e.latLng) iW.setPosition(e.latLng);
       else if (this.bounds)   iW.setPosition(this.bounds.getCenter());
 
+      iW.setContent("<div id='geoxml3_infowindow'>"+iW.getContent()+"</div>");
+      google.maps.event.addListenerOnce(iW, "domready", function() {
+        var node = document.getElementById('geoxml3_infowindow');
+        var imgArray = node.getElementsByTagName('img');
+        for (var i = 0; i < imgArray.length; i++) 
+        {
+          var imgUrlIE = imgArray[i].getAttribute("src");
+          var imgUrl  = cleanURL(doc.baseDir, imgUrlIE);
+
+          if (kmzMetaData[imgUrl]) {
+             imgArray[i].src = kmzMetaData[imgUrl].dataUrl;
+          } else if (kmzMetaData[imgUrlIE]) {
+             imgArray[i].src = kmzMetaData[imgUrlIE].dataUrl;
+          }
+        }
+      });
       iW.open(this.map, this.bounds ? null : this);
     });
 
@@ -1477,6 +1493,21 @@ geoXML3.fetchXML = function (url, callback) {
   return null;
 };
 
+var IEversion = function() {
+  // http://msdn.microsoft.com/workshop/author/dhtml/overview/browserdetection.asp
+  // Returns the version of Internet Explorer or a -1
+  // (indicating the use of another browser).
+  var rv = -1; // Return value assumes failure
+  if (navigator.appName == 'Microsoft Internet Explorer') {
+    var ua = navigator.userAgent;
+    var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+    if (re.exec(ua) != null) {
+      rv = parseFloat( RegExp.$1 );
+    }
+  }
+  return rv;
+};
+
 /**
  * Fetches a KMZ document.
  *
@@ -1555,13 +1586,21 @@ geoXML3.fetchZIP = function (url, callback, parser) {
       parser.kmzMetaData[mdUrl].entry = entry;
       // data:image/gif;base64,R0lGODlhEAAOALMA...
       parser.kmzMetaData[mdUrl].dataUrl = 'data:' + mime + ';base64,' + base64Encode(entryContent);
-
       // IE cannot handle GET requests beyond 2071 characters, even if it's an inline image
-      if (/msie/i.test(navigator.userAgent) && !/opera/i.test(navigator.userAgent) && parser.kmzMetaData[mdUrl].dataUrl.length > 2071)
-        parser.kmzMetaData[mdUrl].dataUrl =
-        // this is a simple IE icon; to hint at the problem...
-        'data:image/gif;base64,R0lGODlhDwAQAOMPADBPvSpQ1Dpoyz1p6FhwvU2A6ECP63CM04CWxYCk+V6x+UK++Jao3rvC3fj7+v///yH5BAEKAA8ALAAAAAAPABAAAASC8Mk5mwCAUMlWwcLRHEelLA' +
-        'oGDMgzSsiyGCAhCETDPMh5XQCBwYBrNBIKWmg0MCQHj8MJU5IoroYCY6AAAgrDIbbQDGIK6DR5UPhlNo0JAlSUNAiDgH7eNAxEDWAKCQM2AAFheVxYAA0AIkFOJ1gBcQQaUQKKA5w7LpcEBwkJaKMUEQA7';
+	if (/msie/i.test(navigator.userAgent) && !/opera/i.test(navigator.userAgent))
+        { 
+            if (((IEversion() < 8.0) &&
+                 (parser.kmzMetaData[mdUrl].dataUrl.length > 2071)) ||
+                ((IEversion < 9.0) && 
+                 (parser.kmzMetaData[mdUrl].dataUrl.length > 32767))) {
+             parser.kmzMetaData[mdUrl].dataUrl =
+             // this is a simple IE icon; to hint at the problem...
+             'data:image/gif;base64,R0lGODlhDwAQAOMPADBPvSpQ1Dpoyz1p6FhwvU2A6ECP63CM04CWxYCk+V6x+UK++Jao3rvC3fj7+v///yH5BAEKAA8ALAAAAAAPABAAAASC8Mk5mwCAUMlWwcLRHEelLA' +
+             'oGDMgzSsiyGCAhCETDPMh5XQCBwYBrNBIKWmg0MCQHj8MJU5IoroYCY6AAAgrDIbbQDGIK6DR5UPhlNo0JAlSUNAiDgH7eNAxEDWAKCQM2AAFheVxYAA0AIkFOJ1gBcQQaUQKKA5w7LpcEBwkJaKMUEQA7';
+            } 
+       }
+       parser.kmzMetaData[internalSrc(entry.name)]=parser.kmzMetaData[mdUrl];	
+
     };
     var kmlExtractCb = function(entry, entryContent) {
       if ((typeof entryContent.description == "string") && (entryContent.name == "Error")) {
@@ -1727,6 +1766,15 @@ var toAbsURL = function (d, s) {
   }
 
   return h + p + '/' + s;
+}
+
+var internalSrc = function(src) {
+  //this gets the full url
+  var url = document.location.href;
+  //this removes everything after the last slash in the path
+  url = url.substring(0,url.lastIndexOf("/") + 1);
+  var internalPath= url+src;
+  return internalPath;
 }
 
 /**
