@@ -274,7 +274,7 @@ function processStyleUrl(node) {
           h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'h')[0], icon.dim.h))
         };
 
-        styleNodes = getElementsByTagName(styleNodes[0], 'hotSpot')[0];
+        styleNodes = getElementsByTagName(thisNode, 'hotSpot');
         if (!!styleNodes && styleNodes.length > 0) {
           icon.hotSpot = {
             x:      styleNodes[0].getAttribute('x'),
