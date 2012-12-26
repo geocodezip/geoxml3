@@ -63,7 +63,7 @@ The use of the GMaps API is not required; if you don't ask `geoXML3.parser` to r
 
     function useTheData(doc) {
       // Geodata handling goes here, using JSON properties of the doc object
-      for (var i = 0; i < doc.placemarks.length; i++) {
+      for (var i = 0; i < doc[0].placemarks.length; i++) {
         doSomething;
       }
     };
