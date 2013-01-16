@@ -720,7 +720,7 @@
                 }
             };
             //XHR binary charset opt by Marcus Granado 2006 [http://mgran.blogspot.com]
-            this.req.overrideMimeType('text/plain; charset=x-user-defined');
+            if (!!this.req.overrideMimeType) this.req.overrideMimeType('text/plain; charset=x-user-defined');
             this.req.send(null);
         };
 
@@ -745,7 +745,7 @@
             };
             this.req.responseType = 'arraybuffer';
             // http://stackoverflow.com/questions/11284728/how-do-i-access-8-bit-binary-data-from-javascript-in-opera
-            this.req.overrideMimeType('application/octet-stream; charset=x-user-defined');
+            if (!!this.req.overrideMimeType) this.req.overrideMimeType('application/octet-stream; charset=x-user-defined');
             this.req.send(null);
         };
 
