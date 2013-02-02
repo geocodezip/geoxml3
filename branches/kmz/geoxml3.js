@@ -363,7 +363,7 @@ function processStyleUrl(node) {
     } else {
       styles[baseUrl][styleID] = clone(defaultStyle);
     }
-    if (!!map["highlight"]) {
+    if (!!map["highlight"] && !!parserOptions.processStyles) {
       processStyleID(map["highlight"]);
     }
     styles[baseUrl][styleID].map = clone(map);
@@ -1265,6 +1265,7 @@ function processStyleUrl(node) {
     kmzMetaData: kmzMetaData,
 
     parse:          parse,
+    render:         render,
     parseKmlString: parseKmlString,
     hideDocument:   hideDocument,
     showDocument:   showDocument,
