@@ -221,7 +221,7 @@ function processStyleMap(thisNode, styles, styleID) {
   } else {
     styles[styleID] =  clone(defaultStyle);
   }      
-  if (!!map["highlight"]) {
+  if (!!map["highlight"] && !!parserOptions.processStyles) {
     processStyleID(map["highlight"]);
   }
   styles[styleID].map = clone(map);
@@ -959,6 +959,7 @@ var createPolygon = function(placemark, doc) {
     docs:    docs,
     
     parse:          parse,
+    render:         render,
     parseKmlString: parseKmlString,
     hideDocument:   hideDocument,
     showDocument:   showDocument,
