@@ -71,3 +71,13 @@ The use of the GMaps API is not required; if you don't ask `geoXML3.parser` to r
 }}}
 
 A callback function supplied to the `afterParse` option will be called when parsing of the KML document is complete, and it will be passed a pointer to the parent JSON object for the parsed data. See JsonObjects for more info on the `doc` object and its properties.
+==Use Case 4: Parse KML text to map==
+To use geoxml3 to parse KML from a string (or a text box) , simply instantiate geoXML3.parser with your v3 map object and call its parseKmlString function with the valid KML text. 
+{{{
+  <script type="text/javascript">
+    var myMap = new google.maps.Map(...);
+
+    var myParser = new geoXML3.parser({map: myMap});
+    myParser.parseKmlString('<kml>...</kml>');
+  </script>
+}}}
