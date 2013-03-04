@@ -134,12 +134,12 @@
     };
 
     JSIO.massApply = function(func, funcThis, arr, needReturn) {
-        var arrayLimit = 99999;  // Chrome has an apply/array limit of 99999; Firefox = 491519
+        var arrayLimit = 65536;  // Chrome has an apply/array limit of 99999; Firefox = 491519, Safari = 65536
         if (arr.length < arrayLimit) return func.apply(funcThis, arr);
         else {
             var newThis = funcThis;
             var offset = 0;
-            var end    = 99999;
+            var end    = 65536;
 
             while (offset < arr.length) {
                 var arrSlice;
