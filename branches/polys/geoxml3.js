@@ -180,14 +180,14 @@ function processStyle(thisNode, styles, styleID) {
       }
       styleNodes = thisNode.getElementsByTagName('LineStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
-        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0]);
+        styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.color);
+        styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0],defaultStyle.width);
       }
       styleNodes = thisNode.getElementsByTagName('PolyStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
-        styles[styleID].outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0]);
-        styles[styleID].fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0]);
-        styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0]);
+        styles[styleID].outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0],defaultStyle.outline);
+        styles[styleID].fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0],defaultStyle.fill);
+        styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.fillcolor);
       }
       return styles[styleID];
 }
@@ -1083,10 +1083,10 @@ geoXML3.fetchXML = function (url, callback) {
 };
 
 //nodeValue: Extract the text value of a DOM node, with leading and trailing whitespace trimmed
-geoXML3.nodeValue = function(node) {
+geoXML3.nodeValue = function(node, defVal) {
   var retStr="";
   if (!node) {
-    return '';
+    return (typeof defVal === 'undefined' || defVal === null) ? '' : defVal;
   }
    if(node.nodeType==3||node.nodeType==4||node.nodeType==2){
       retStr+=node.nodeValue;
