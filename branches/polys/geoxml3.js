@@ -46,7 +46,7 @@ geoXML3.parser = function (options) {
     parserOptions.infoWindow = new google.maps.InfoWindow();
 
   geoXML3.xhrTimeout = 60000;
-  if (typeof !!parserOptions.xhrTimeout) geoXML3.xhrTimeout = parserOptions.xhrTimeout; 
+  if (!!parserOptions.xhrTimeout) geoXML3.xhrTimeout = parserOptions.xhrTimeout; 
 
   var parseKmlString = function (kmlString, docSet) {
     // Internal values for the set of documents as a whole
