@@ -45,6 +45,9 @@ geoXML3.parser = function (options) {
   if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
     parserOptions.infoWindow = new google.maps.InfoWindow();
 
+  geoXML3.xhrTimeout = 60000;
+  if (typeof !!parserOptions.xhrTimeout) geoXML3.xhrTimeout = parserOptions.xhrTimeout; 
+
   var parseKmlString = function (kmlString, docSet) {
     // Internal values for the set of documents as a whole
     var internals = {
@@ -1039,6 +1042,7 @@ geoXML3.xmlParse = function (str) {
 
 geoXML3.fetchXML = function (url, callback) {
   function timeoutHandler() {
+    geoXML3.log('XHR timeout');
     callback();
   };
 
@@ -1077,7 +1081,7 @@ geoXML3.fetchXML = function (url, callback) {
         geoXML3.fetchers.push(xhrFetcher);
       }
     };
-    xhrFetcher.xhrtimeout = setTimeout(timeoutHandler, 60000);
+    xhrFetcher.xhrtimeout = setTimeout(timeoutHandler, geoXML3.xhrTimeout);
     xhrFetcher.fetcher.send(null);
   }
 };
