@@ -822,9 +822,9 @@ var randomColor = function(){
 // Create Polyline
 var createPolyline = function(placemark, doc) {
   var path = [];
+  var bounds = new google.maps.LatLngBounds();
   for (var j=0; j<placemark.LineString.length; j++) {
     var coords = placemark.LineString[j].coordinates;
-    var bounds = new google.maps.LatLngBounds();
     for (var i=0;i<coords.length;i++) {
       var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
       path.push(pt);
