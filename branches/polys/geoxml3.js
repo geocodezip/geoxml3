@@ -1075,7 +1075,11 @@ geoXML3.fetchXML = function (url, callback) {
           callback();
         } else {
           // Returned successfully
-	    callback(geoXML3.xmlParse(xhrFetcher.fetcher.responseText));
+          var xml = geoXML3.xmlParse(xhrFetcher.fetcher.responseText);
+          if (xml.parseError && (xml.parseError.errorCode != 0)) {
+	    geoXML3.log("XML parse error "+xml.parseError.errorCode+", "+xml.parseError.reason+"\nLine:"+xml.parseError.line+", Position:"+xml.parseError.linepos+", srcText:"+xml.parseError.srcText);
+          }
+          callback(xml);
         }
         // We're done with this fetcher object
         geoXML3.fetchers.push(xhrFetcher);
