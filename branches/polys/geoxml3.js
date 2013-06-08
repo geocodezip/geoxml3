@@ -19,6 +19,55 @@
    limitations under the License.
 
 */
+/**
+ * A MultiGeometry object that will allow multiple polylines in a MultiGeometry
+ * containing LineStrings to be treated as a single object
+ *
+ * @param {MutiGeometryOptions} anonymous object.  Available properties:
+ * map: The map on which to attach the MultiGeometry
+ * paths: the individual polylines
+ * polylineOptions: options to use when constructing all the polylines
+ *
+ * @constructor
+ */
+// only if Google Maps API included
+if (!!window.google && !! google.maps) { 
+function MultiGeometry(multiGeometryOptions) {
+   function createPolyline(polylineOptions, mg) {
+     var polyline = new google.maps.Polyline(polylineOptions);
+     google.maps.event.addListener(polyline,'click', function(evt) { google.maps.event.trigger(mg,'click',evt);});
+     google.maps.event.addListener(polyline,'dblclick', function(evt) { google.maps.event.trigger(mg, 'dblclick', evt);});
+     google.maps.event.addListener(polyline,'mousedown', function(evt) { google.maps.event.trigger(mg, 'mousedown', evt);});
+     google.maps.event.addListener(polyline,'mousemove', function(evt) { google.maps.event.trigger(mg, 'mousemove', evt);});
+     google.maps.event.addListener(polyline,'mouseout', function(evt) { google.maps.event.trigger(mg, 'mouseout', evt);});
+     google.maps.event.addListener(polyline,'mouseover', function(evt) { google.maps.event.trigger(mg, 'mouseover', evt);});
+     google.maps.event.addListener(polyline,'mouseup', function(evt) { google.maps.event.trigger(mg, 'mouseup', evt);});
+     google.maps.event.addListener(polyline,'rightclick', function(evt) { google.maps.event.trigger(mg, 'rightclick', evt);});
+     return polyline;
+   }
+   this.setValues(multiGeometryOptions);
+   this.polylines = [];
+
+   for (i=0; i<this.paths.length;i++) {
+     var polylineOptions = multiGeometryOptions;
+     polylineOptions.path = this.paths[i];
+     var polyline = createPolyline(polylineOptions,this);
+     // Bind the polyline properties to the MultiGeometry properties
+     this.polylines.push(polyline);
+   }
+}
+MultiGeometry.prototype = new google.maps.MVCObject();
+MultiGeometry.prototype.changed = function(key) {
+    // alert(key+" changed");
+    if (this.polylines) {
+	for (var i=0; i<this.polylines.length; i++) {
+	    this.polylines[i].set(key,this.get(key));
+	}
+    }
+};
+MultiGeometry.prototype.setMap = function(map) { this.set('map',map); };
+MultiGeometry.prototype.getMap = function() { return this.get('map'); };
+}
 
 // Extend the global String object with a method to remove leading and trailing whitespace
 if (!String.prototype.trim) {
@@ -110,27 +159,29 @@ geoXML3.parser = function (options) {
     if (!doc) doc = docs[0];
     // Hide the map objects associated with a document 
     var i;
-    if (!!doc.markers) {
-      for (i = 0; i < doc.markers.length; i++) {
-        if(!!doc.markers[i].infoWindow) doc.markers[i].infoWindow.close();
-        doc.markers[i].setVisible(false);
+    if (!!window.google && !!google.maps) {
+      if (!!doc.markers) {
+        for (i = 0; i < doc.markers.length; i++) {
+          if(!!doc.markers[i].infoWindow) doc.markers[i].infoWindow.close();
+          doc.markers[i].setVisible(false);
+        }
       }
-    }
-    if (!!doc.ggroundoverlays) {
-      for (i = 0; i < doc.ggroundoverlays.length; i++) {
-        doc.ggroundoverlays[i].setOpacity(0);
+      if (!!doc.ggroundoverlays) {
+        for (i = 0; i < doc.ggroundoverlays.length; i++) {
+          doc.ggroundoverlays[i].setOpacity(0);
+        }
       }
-    }
-    if (!!doc.gpolylines) {
-      for (i=0;i<doc.gpolylines.length;i++) {
-        if(!!doc.gpolylines[i].infoWindow) doc.gpolylines[i].infoWindow.close();
-        doc.gpolylines[i].setMap(null);
+      if (!!doc.gpolylines) {
+        for (i=0;i<doc.gpolylines.length;i++) {
+          if(!!doc.gpolylines[i].infoWindow) doc.gpolylines[i].infoWindow.close();
+          doc.gpolylines[i].setMap(null);
+        }
       }
-    }
-    if (!!doc.gpolygons) {
-      for (i=0;i<doc.gpolygons.length;i++) {
-        if(!!doc.gpolygons[i].infoWindow) doc.gpolygons[i].infoWindow.close();
-        doc.gpolygons[i].setMap(null);
+      if (!!doc.gpolygons) {
+        for (i=0;i<doc.gpolygons.length;i++) {
+          if(!!doc.gpolygons[i].infoWindow) doc.gpolygons[i].infoWindow.close();
+         doc.gpolygons[i].setMap(null);
+        }
       }
     }
   };
@@ -139,24 +190,26 @@ geoXML3.parser = function (options) {
     if (!doc) doc = docs[0];
     // Show the map objects associated with a document 
     var i;
-    if (!!doc.markers) {
-      for (i = 0; i < doc.markers.length; i++) {
-        doc.markers[i].setVisible(true);
+    if (!!window.google && !!google.maps) {
+      if (!!doc.markers) {
+        for (i = 0; i < doc.markers.length; i++) {
+          doc.markers[i].setVisible(true);
+        }
       }
-    }
-    if (!!doc.ggroundoverlays) {
-      for (i = 0; i < doc.ggroundoverlays.length; i++) {
-        doc.ggroundoverlays[i].setOpacity(doc.ggroundoverlays[i].percentOpacity_);
+      if (!!doc.ggroundoverlays) {
+        for (i = 0; i < doc.ggroundoverlays.length; i++) {
+          doc.ggroundoverlays[i].setOpacity(doc.ggroundoverlays[i].percentOpacity_);
+        }
       }
-    }
-    if (!!doc.gpolylines) {
-      for (i=0;i<doc.gpolylines.length;i++) {
-        doc.gpolylines[i].setMap(parserOptions.map);
+      if (!!doc.gpolylines) {
+        for (i=0;i<doc.gpolylines.length;i++) {
+          doc.gpolylines[i].setMap(parserOptions.map);
+        }
       }
-    }
-    if (!!doc.gpolygons) {
-      for (i=0;i<doc.gpolygons.length;i++) {
-        doc.gpolygons[i].setMap(parserOptions.map);
+      if (!!doc.gpolygons) {
+        for (i=0;i<doc.gpolygons.length;i++) {
+          doc.gpolygons[i].setMap(parserOptions.map);
+        }
       }
     }
   };
@@ -372,7 +425,8 @@ var coordListA = [];
         switch(Geometry) {
           case "Point":
             placemark.Point = processPlacemarkCoords(node, "Point")[0]; 
-            placemark.latlng = new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng);
+            if (!!window.google && !!google.maps) 
+              placemark.latlng = new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng);
             pathLength = 1;
             break;
           case "LinearRing":
@@ -411,7 +465,7 @@ var coordListA = [];
       doc.placemarks.push(placemark);
       
       if (placemark.Point) {
-          if (!!google.maps) {
+          if (!!window.google && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
           }
@@ -454,7 +508,7 @@ var coordListA = [];
               poly = createPolygon(placemark,doc);
               poly.active = true;
             }
-          if (!!google.maps) {
+          if (!!window.google && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.union(poly.bounds);
           }
@@ -471,7 +525,7 @@ var coordListA = [];
               poly = createPolyline(placemark,doc);
               poly.active = true;
             }
-          if (!!google.maps) {
+          if (!!window.google && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.union(poly.bounds);
           }
@@ -519,7 +573,7 @@ var coordListA = [];
             west:  parseFloat(geoXML3.nodeValue(node.getElementsByTagName('west')[0]))
           }
         };
-        if (!!google.maps) {
+        if (!!window.google && !!google.maps) {
           doc.bounds = doc.bounds || new google.maps.LatLngBounds();
           doc.bounds.union(new google.maps.LatLngBounds(
             new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
@@ -821,29 +875,37 @@ var randomColor = function(){
 
 // Create Polyline
 var createPolyline = function(placemark, doc) {
-  var path = [];
+  var paths = [];
   var bounds = new google.maps.LatLngBounds();
   for (var j=0; j<placemark.LineString.length; j++) {
+    var path = [];
     var coords = placemark.LineString[j].coordinates;
     for (var i=0;i<coords.length;i++) {
       var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
       path.push(pt);
       bounds.extend(pt);
     }
+    paths.push(path);
   }
+    
   // point to open the infowindow if triggered 
-  var point = path[Math.floor(path.length/2)];
+  var point = paths[0][Math.floor(path.length/2)];
   // Load basic polyline properties
   var kmlStrokeColor = kmlColor(placemark.style.color);
   var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
     map:      parserOptions.map,
-    path: path,
     strokeColor: kmlStrokeColor.color,
     strokeWeight: placemark.style.width,
     strokeOpacity: kmlStrokeColor.opacity,
     title:    placemark.name
   });
-  var p = new google.maps.Polyline(polyOptions);
+  if (paths.length > 1) {
+    polyOptions.paths = paths;
+    var p = new MultiGeometry(polyOptions);
+  } else {
+    polyOptions.path = paths[0];
+    var p = new google.maps.Polyline(polyOptions);
+  }
   p.bounds = bounds;
   // setup and create the infoWindow if it is not suppressed
   if (!parserOptions.suppressInfoWindows) {
@@ -867,7 +929,7 @@ var createPolyline = function(placemark, doc) {
       } else {
         p.infoWindow.setPosition(point);
       }
-      p.infoWindow.open(this.map);
+      p.infoWindow.open(p.map || p.polylines[0].map);
     });
   }
   if (!!doc) doc.gpolylines.push(p);
@@ -1077,7 +1139,7 @@ geoXML3.fetchXML = function (url, callback) {
           // Returned successfully
           var xml = geoXML3.xmlParse(xhrFetcher.fetcher.responseText);
           if (xml.parseError && (xml.parseError.errorCode != 0)) {
-	    geoXML3.log("XML parse error "+xml.parseError.errorCode+", "+xml.parseError.reason+"\nLine:"+xml.parseError.line+", Position:"+xml.parseError.linepos+", srcText:"+xml.parseError.srcText);
+           geoXML3.log("XML parse error "+xml.parseError.errorCode+", "+xml.parseError.reason+"\nLine:"+xml.parseError.line+", Position:"+xml.parseError.linepos+", srcText:"+xml.parseError.srcText);
           }
           callback(xml);
         }
