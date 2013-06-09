@@ -91,7 +91,7 @@ geoXML3.parser = function (options) {
   var lastPlacemark;
   var parserName;
   if (typeof parserOptions.suppressInfoWindows == "undefined") parserOptions.suppressInfoWindows = false;
-  if (!parserOptions.infoWindow && parserOptions.singleInfoWindow)
+  if (!parserOptions.infoWindow && parserOptions.singleInfoWindow && !!window.google && !!google.maps)
     parserOptions.infoWindow = new google.maps.InfoWindow();
 
   geoXML3.xhrTimeout = 60000;
@@ -378,7 +378,7 @@ var coordListA = [];
         // Convert parsed styles into GMaps equivalents
         processStyles(doc);
       }
-      
+
       // Parse placemarks
       if (!!doc.reload && !!doc.markers) {
         for (i = 0; i < doc.markers.length; i++) {
@@ -425,7 +425,7 @@ var coordListA = [];
         switch(Geometry) {
           case "Point":
             placemark.Point = processPlacemarkCoords(node, "Point")[0]; 
-            if (!!window.google && !!google.maps) 
+            if (!!window.google && !!google.maps)
               placemark.latlng = new google.maps.LatLng(placemark.Point.coordinates[0].lat, placemark.Point.coordinates[0].lng);
             pathLength = 1;
             break;
@@ -599,20 +599,20 @@ var coordListA = [];
           var found = false;
           if (!!doc) {
             doc.groundoverlays = doc.groundoverlays || [];
-            if (doc.reload) {
-              overlayBounds = new google.maps.LatLngBounds(
-                new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
-                new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east));
-            var overlays = doc.groundoverlays;
-            for (i = overlays.length; i--;) {
-              if ((overlays[i].bounds().equals(overlayBounds)) &&
-                  (overlays.url_ === groundOverlay.icon.href)) {
-                found = overlays[i].active = true;
-                break;
+            if (!!window.google && !!google.maps && doc.reload) {
+                overlayBounds = new google.maps.LatLngBounds(
+                  new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
+                  new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east));
+              var overlays = doc.groundoverlays;
+              for (i = overlays.length; i--;) {
+                if ((overlays[i].bounds().equals(overlayBounds)) &&
+                    (overlays.url_ === groundOverlay.icon.href)) {
+                  found = overlays[i].active = true;
+                  break;
+                }
               }
-            }
-          } 
-        }
+            } 
+          }
   
           if (!found) {
             // Call the built-in overlay creator
@@ -694,7 +694,7 @@ var coordListA = [];
       }
 }
 
-      if (!!doc.bounds) {
+      if (!!doc.bounds && !!window.google && !!google.maps) {
         doc.internals.bounds = doc.internals.bounds || new google.maps.LatLngBounds();
         doc.internals.bounds.union(doc.bounds); 
       }
