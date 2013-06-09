@@ -463,8 +463,8 @@ var coordListA = [];
       // call the custom placemark parse function if it is defined
       if (!!parserOptions.pmParseFn) parserOptions.pmParseFn(node, placemark);
       doc.placemarks.push(placemark);
-      
-      if (placemark.Point) {
+      if (!!window.google && !!google.maps) {
+       if (placemark.Point) {
           if (!!window.google && !!google.maps) {
             doc.bounds = doc.bounds || new google.maps.LatLngBounds();
             doc.bounds.extend(placemark.latlng);
@@ -494,43 +494,43 @@ var coordListA = [];
               marker.active = true;
             }
           }
-        }
-        if (placemark.Polygon) { // poly test 2
-            if (!!doc) {
-              doc.gpolygons = doc.gpolygons || [];
-            }
+         }
+         if (placemark.Polygon) { // poly test 2
+          if (!!doc) {
+           doc.gpolygons = doc.gpolygons || [];
+          }
 
-            if (!!parserOptions.createPolygon) {
-              // User-defined polygon handler
-              poly = parserOptions.createPolygon(placemark, doc);
-            } else {  // ! user defined createPolygon
-              // Check to see if this marker was created on a previous load of this document
-              poly = createPolygon(placemark,doc);
-              poly.active = true;
-            }
+          if (!!parserOptions.createPolygon) {
+           // User-defined polygon handler
+            poly = parserOptions.createPolygon(placemark, doc);
+          } else {  // ! user defined createPolygon
+           // Check to see if this marker was created on a previous load of this document
+           poly = createPolygon(placemark,doc);
+           poly.active = true;
+          }
           if (!!window.google && !!google.maps) {
-            doc.bounds = doc.bounds || new google.maps.LatLngBounds();
-            doc.bounds.union(poly.bounds);
+           doc.bounds = doc.bounds || new google.maps.LatLngBounds();
+           doc.bounds.union(poly.bounds);
           }
-          } 
-          if (placemark.LineString) { // polyline
-            if (!!doc) {
-              doc.gpolylines = doc.gpolylines || [];
-            }
-            if (!!parserOptions.createPolyline) {
-              // User-defined polyline handler
-              poly = parserOptions.createPolyline(placemark, doc);
-            } else { // ! user defined createPolyline
-              // Check to see if this marker was created on a previous load of this document
-              poly = createPolyline(placemark,doc);
-              poly.active = true;
-            }
+         } 
+         if (placemark.LineString) { // polyline
+          if (!!doc) {
+           doc.gpolylines = doc.gpolylines || [];
+          }
+          if (!!parserOptions.createPolyline) {
+           // User-defined polyline handler
+           poly = parserOptions.createPolyline(placemark, doc);
+          } else { // ! user defined createPolyline
+           // Check to see if this marker was created on a previous load of this document
+           poly = createPolyline(placemark,doc);
+           poly.active = true;
+          }
           if (!!window.google && !!google.maps) {
-            doc.bounds = doc.bounds || new google.maps.LatLngBounds();
-            doc.bounds.union(poly.bounds);
+           doc.bounds = doc.bounds || new google.maps.LatLngBounds();
+           doc.bounds.union(poly.bounds);
           }
-          }
-          
+         }
+       }
       } // placemark loop
 
       if (!!doc.reload && !!doc.markers) {
@@ -581,20 +581,20 @@ var coordListA = [];
           ));
         }
 
-      // Opacity is encoded in the color node
-      var colorNode = node.getElementsByTagName('color');
-      if ( colorNode && colorNode.length && (colorNode.length > 0)) {
-        groundOverlay.opacity = geoXML3.getOpacity(nodeValue(colorNode[0]));
-      } else {
-        groundOverlay.opacity = 0.45;
-      }
+        // Opacity is encoded in the color node
+        var colorNode = node.getElementsByTagName('color');
+        if ( colorNode && colorNode.length && (colorNode.length > 0)) {
+         groundOverlay.opacity = geoXML3.getOpacity(nodeValue(colorNode[0]));
+        } else {
+         groundOverlay.opacity = 0.45;
+        }
 
-      doc.groundoverlays.push(groundOverlay);
-  
-        if (!!parserOptions.createOverlay) {
+        doc.groundoverlays.push(groundOverlay);
+        if (!!window.google && !!google.maps) {
+         if (!!parserOptions.createOverlay) {
           // User-defined overlay handler
           parserOptions.createOverlay(groundOverlay, doc);
-        } else { // ! user defined createOverlay
+         } else { // ! user defined createOverlay
           // Check to see if this overlay was created on a previous load of this document
           var found = false;
           if (!!doc) {
@@ -619,17 +619,18 @@ var coordListA = [];
             overlay = createOverlay(groundOverlay, doc);
             overlay.active = true;
           }
-        }
-    if (!!doc.reload && !!doc.groundoverlays && !!doc.groundoverlays.length) {
-      var overlays = doc.groundoverlays;
-      for (i = overlays.length; i--;) {
-        if (!overlays[i].active) {
-          overlays[i].remove();
-          overlays.splice(i, 1);
+	 }
+         if (!!doc.reload && !!doc.groundoverlays && !!doc.groundoverlays.length) {
+          var overlays = doc.groundoverlays;
+          for (i = overlays.length; i--;) {
+           if (!overlays[i].active) {
+            overlays[i].remove();
+            overlays.splice(i, 1);
+           }
           }
-      }
-      doc.groundoverlays = overlays;
-    }
+          doc.groundoverlays = overlays;
+	 }
+	}
       }
       // Parse network links
       var networkLink;
@@ -749,6 +750,7 @@ var randomColor = function(){
 };
 
   var processStyleID = function (style) {
+    if (!!window.google && !!google.maps) {
       var zeroPoint = new google.maps.Point(0,0);
       if (!!style.href) {
         var markerRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange|pause|go|stop)(-dot)?\.png/;
@@ -799,6 +801,7 @@ var randomColor = function(){
             shadowSize);
         }
       }
+    }
   }
     
   var processStyles = function (doc) {
