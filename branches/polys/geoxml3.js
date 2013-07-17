@@ -346,6 +346,7 @@ var coordListA = [];
       doc.networkLinks   = [];
       doc.gpolygons      = [];
       doc.gpolylines     = [];
+      doc.markers        = [];
 
     // Declare some helper functions in local scope for better performance
     var nodeValue  = geoXML3.nodeValue;
