@@ -238,14 +238,14 @@ function processStyle(thisNode, styles, styleID) {
       styleNodes = thisNode.getElementsByTagName('LineStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.color);
-        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName(styleNodes[0], 'colorMode')[0], defaultStyle.colorMode);
+        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName('colorMode')[0], defaultStyle.colorMode);
         styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0],defaultStyle.width);
       }
       styleNodes = thisNode.getElementsByTagName('PolyStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID].outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0],defaultStyle.outline);
         styles[styleID].fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0],defaultStyle.fill);
-        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName(styleNodes[0], 'colorMode')[0], defaultStyle.colorMode);
+        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName('colorMode')[0], defaultStyle.colorMode);
         styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.fillcolor);
       }
       return styles[styleID];
