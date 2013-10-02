@@ -216,6 +216,7 @@ geoXML3.parser = function (options) {
 
 var defaultStyle = {
   color: "ff000000", // black
+  colorMode: "normal",
   width: 1,
   fill: true,
   outline: true,
@@ -237,12 +238,14 @@ function processStyle(thisNode, styles, styleID) {
       styleNodes = thisNode.getElementsByTagName('LineStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID].color = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.color);
+        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName(styleNodes[0], 'colorMode')[0], defaultStyle.colorMode);
         styles[styleID].width = nodeValue(styleNodes[0].getElementsByTagName('width')[0],defaultStyle.width);
       }
       styleNodes = thisNode.getElementsByTagName('PolyStyle');
       if (!!styleNodes && !!styleNodes.length && (styleNodes.length > 0)) {
         styles[styleID].outline   = getBooleanValue(styleNodes[0].getElementsByTagName('outline')[0],defaultStyle.outline);
         styles[styleID].fill      = getBooleanValue(styleNodes[0].getElementsByTagName('fill')[0],defaultStyle.fill);
+        styles[styleID].colorMode = nodeValue(styleNodes[0].getElementsByTagName(styleNodes[0], 'colorMode')[0], defaultStyle.colorMode);
         styles[styleID].fillcolor = nodeValue(styleNodes[0].getElementsByTagName('color')[0],defaultStyle.fillcolor);
       }
       return styles[styleID];
@@ -725,30 +728,35 @@ var coordListA = [];
       }
   };
 
-var kmlColor = function (kmlIn) {
-  var kmlColor = {};
-  if (kmlIn) {
-   aa = kmlIn.substr(0,2);
-   bb = kmlIn.substr(2,2);
-   gg = kmlIn.substr(4,2);
-   rr = kmlIn.substr(6,2);
-   kmlColor.color = "#" + rr + gg + bb;
-   kmlColor.opacity = parseInt(aa,16)/256;
-  } else {
-   // defaults
-   kmlColor.color = randomColor();
-   kmlColor.opacity = 0.45;
-  }
-  return kmlColor;
-}
+  var kmlColor = function (kmlIn, colorMode) {
+    var kmlColor = {};
+    kmlIn = kmlIn || 'ffffffff';  // white (KML 2.2 default)
 
-var randomColor = function(){ 
-  var color="#";
-  var colorNum = Math.random()*8388607.0;  // 8388607 = Math.pow(2,23)-1
-  var colorStr = colorNum.toString(16);
-  color += colorStr.substring(0,colorStr.indexOf('.'));
-  return color;
-};
+    var aa = kmlIn.substr(0,2);
+    var bb = kmlIn.substr(2,2);
+    var gg = kmlIn.substr(4,2);
+    var rr = kmlIn.substr(6,2);
+
+    kmlColor.opacity = parseInt(aa, 16) / 256;
+    kmlColor.color   = (colorMode === 'random') ? randomColor(rr, gg, bb) : '#' + rr + gg + bb;
+    return kmlColor;
+  };
+
+  // Implemented per KML 2.2 <ColorStyle> specs
+  var randomColor = function(rr, gg, bb) {
+    var col = { rr: rr, gg: gg, bb: bb };
+    for (var k in col) {
+      var v = col[k];
+      if (v == null) v = 'ff';
+
+      // RGB values are limiters for random numbers (ie: 7f would be a random value between 0 and 7f)
+      v = Math.round(Math.random() * parseInt(rr, 16)).toString(16);
+      if (v.length === 1) v = '0' + v;
+      col[k] = v;
+    }
+
+    return '#' + col.rr + col.gg + col.bb;
+  };
 
   var processStyleID = function (style) {
     if (!!window.google && !!google.maps) {
@@ -895,7 +903,7 @@ var createPolyline = function(placemark, doc) {
   // point to open the infowindow if triggered 
   var point = paths[0][Math.floor(path.length/2)];
   // Load basic polyline properties
-  var kmlStrokeColor = kmlColor(placemark.style.color);
+  var kmlStrokeColor = kmlColor(placemark.style.color,placemark.style.colorMode);
   var polyOptions = geoXML3.combineOptions(parserOptions.polylineOptions, {
     map:      parserOptions.map,
     strokeColor: kmlStrokeColor.color,
@@ -972,8 +980,8 @@ var createPolygon = function(placemark, doc) {
   }
 
   // Load basic polygon properties
-  var kmlStrokeColor = kmlColor(placemark.style.color);
-  var kmlFillColor = kmlColor(placemark.style.fillcolor);
+  var kmlStrokeColor = kmlColor(placemark.style.color,placemark.style.colorMode);
+  var kmlFillColor = kmlColor(placemark.style.fillcolor,placemark.style.colorMode);
   if (!placemark.style.fill) kmlFillColor.opacity = 0.0;
   var strokeWeight = placemark.style.width;
   if (!placemark.style.outline) {
