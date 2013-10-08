@@ -147,7 +147,9 @@ geoXML3.parser = function (options) {
       }
       thisDoc.url       = urls[i];
       thisDoc.internals = internals;
-      fetchDoc(thisDoc.url, thisDoc);
+      var url = thisDoc.url;
+      if (parserOptions.proxy) url = parserOptions.proxy+thisDoc.url; 
+      fetchDoc(url, thisDoc);
     }
   };
 
