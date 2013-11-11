@@ -511,7 +511,7 @@ function processStyleUrl(node) {
         }
       }
       var placemark, node, coords, path, marker, poly;
-      var placemark, coords, path, pathLength, marker, polygonNodes, coordList;
+      var pathLength, marker, polygonNodes, coordList;
       var placemarkNodes = getElementsByTagName(responseXML, 'Placemark');
       for (pm = 0; pm < placemarkNodes.length; pm++) {
         // Init the placemark object
@@ -973,13 +973,15 @@ function processStyleUrl(node) {
     };
 
     // Figure out the anchor spot
+    // Origins, anchor positions and coordinates of the marker increase in the X direction to the right and in
+    // the Y direction down.
     var aX, aY;
     switch (icon.hotSpot.xunits) {
       case 'fraction':    aX = rnd(scaled.aX * icon.dim.w); break;
       case 'insetPixels': aX = rnd(icon.dim.w * icon.scale - scaled.aX); break;
       default:            aX = rnd(scaled.aX); break;  // already pixels
     }
-    aY = rnd( ((icon.hotSpot.yunits === 'fraction') ? icon.dim.h : 1) * scaled.aY );  // insetPixels Y = pixels Y
+    aY = scaled.h - rnd( ((icon.hotSpot.yunits === 'fraction') ? icon.dim.h : 1) * scaled.aY );  // insetPixels Y = pixels Y
     var iconAnchor = new google.maps.Point(aX, aY);
 
     // Sizes
@@ -994,13 +996,13 @@ function processStyleUrl(node) {
     if (kmzMetaData[icon.url]) icon.url = kmzMetaData[icon.url].dataUrl;
 
     // Init the style object with the KML icon
-    icon.marker = new google.maps.MarkerImage(
-      icon.url,    // url
-      iconSize,    // size
-      iconOrigin,  // origin
-      iconAnchor,  // anchor
-      iconScale    // scaledSize
-    );
+    icon.marker = {
+      url: icon.url,        // url
+      size: iconSize,       // size
+      origin: iconOrigin,   // origin
+      anchor: iconAnchor,   // anchor
+      scaledSize: iconScale // scaledSize
+    };
 
     // Look for a predictable shadow
     var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
@@ -1008,22 +1010,22 @@ function processStyleUrl(node) {
     var shadowPoint = new google.maps.Point(16, 32);
     if (stdRegEx.test(icon.href)) {
       // A standard GMap-style marker icon
-      icon.shadow = new google.maps.MarkerImage(
-        'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png', // url
-        shadowSize,                                                      // size
-        null,                                                            // origin
-        shadowPoint,                                                     // anchor
-        shadowSize                                                       // scaledSize
-      );
+	icon.shadow = {
+	  url: 'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png', // url
+          size: shadowSize,    // size
+          origin: null,        // origin
+	  anchor: shadowPoint, // anchor
+          scaledSize: shadowSize // scaledSize
+	};
     } else if (icon.href.indexOf('-pushpin.png') > -1) {
       // Pushpin marker icon
-      icon.shadow = new google.maps.MarkerImage(
-        'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',  // url
-        shadowSize,                                                      // size
-        null,                                                            // origin
-        shadowPoint,                                                     // anchor
-        shadowSize                                                       // scaledSize
-      );
+      icon.shadow = {
+	url: 'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',  // url
+        size: shadowSize,    // size
+        origin: null,        // origin
+        anchor: shadowPoint, // anchor
+        scaledSize: shadowSize // scaledSize
+      };
     } /* else {
       // Other MyMaps KML standard icon
       icon.shadow = new google.maps.MarkerImage(
