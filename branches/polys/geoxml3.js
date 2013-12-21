@@ -81,6 +81,9 @@ geoXML3 = window.geoXML3 || {instances: []};
 
 // Constructor for the root KML parser object
 geoXML3.parser = function (options) {
+  // Inherit from Google MVC Object to include event handling   
+  google.maps.MVCObject.call(this);   
+
   // Private variables
   var parserOptions = geoXML3.combineOptions(options, {
     singleInfoWindow: false,
@@ -727,6 +730,7 @@ var coordListA = [];
               docs.push(doc.internals.docSet[i]);
             }
         }
+        google.maps.event.trigger(doc.internals.parser, 'parsed');   
       }
   };
 
