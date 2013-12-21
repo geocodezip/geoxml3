@@ -53,6 +53,9 @@ geoXML3 = window.geoXML3 || {instances: []};
  * @param {geoXML3.parserOptions} options
  */
 geoXML3.parser = function (options) {
+  // Inherit from Google MVC Object to include event handling   
+  google.maps.MVCObject.call(this);   
+
   // Private variables
   var parserOptions = new geoXML3.parserOptions(options);
   var docs        = [];  // Individual KML documents
@@ -886,6 +889,7 @@ function processStyleUrl(node) {
       if (parserOptions.afterParse) {
         parserOptions.afterParse(doc.internals.docSet);
       }
+      google.maps.event.trigger(doc.internals.parser, 'parsed');   
     }
   };
 
