@@ -1203,8 +1203,9 @@ function processStyleUrl(node) {
 
     if (!placemark.balloonVisibility || bStyle.displayMode === 'hide') return;
 
-    // define geDirections
-    if (placemark.latlng) {
+    // define geDirections 
+    if (placemark.latlng && 
+        (!parserOptions.suppressDirections || !parserOptions.suppressDirections)) {
       vars.directions.push('sll=' + placemark.latlng.toUrlValue());
 
       var url = 'http://maps.google.com/maps?' + vars.directions.join('&');
