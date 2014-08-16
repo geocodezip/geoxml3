@@ -527,7 +527,8 @@ function processStyleUrl(node) {
           styleBaseUrl: styleUrl[0] ? cleanURL(doc.baseDir, styleUrl[0]) : doc.baseUrl,
           styleID:      styleUrl[1],
           visibility:        getBooleanValue(getElementsByTagName(node, 'visibility')[0], true),
-          balloonVisibility: getBooleanValue(getElementsByTagNameNS(node, gxNS, 'balloonVisibility')[0], !parserOptions.suppressInfoWindows)
+          balloonVisibility: getBooleanValue(getElementsByTagNameNS(node, gxNS, 'balloonVisibility')[0], !parserOptions.suppressInfoWindows),
+          id:           node.getAttribute('id')
         };
         placemark.style = (styles[placemark.styleBaseUrl] && styles[placemark.styleBaseUrl][placemark.styleID]) || clone(defaultStyle);
         // inline style overrides shared style
@@ -651,7 +652,10 @@ function processStyleUrl(node) {
               doc.markers = doc.markers || [];
               if (doc.reload) {
                 for (var j = 0; j < doc.markers.length; j++) {
-                  if (doc.markers[j].getPosition().equals(placemark.latlng)) {
+                    if ((doc.markers[j].id == placemark.id) ||
+			// if no id, check position
+                        (!doc.markers[j].id && 
+                         (doc.markers[j].getPosition().equals(placemark.latlng)))) {
                     found = doc.markers[j].active = true;
                     break;
                   }
@@ -662,7 +666,10 @@ function processStyleUrl(node) {
           if (!found) {
             // Call the marker creator
             var marker = pointCreateFunc(placemark, doc);
-            if (marker) marker.active = placemark.visibility;
+            if (marker) { 
+              marker.active = placemark.visibility;
+              marker.id = placemark.id;
+            }
           }
         }
         // polygon/line
