@@ -403,7 +403,8 @@ var coordListA = [];
         placemark = {
           name:  geoXML3.nodeValue(node.getElementsByTagName('name')[0]),
           description: geoXML3.nodeValue(node.getElementsByTagName('description')[0]),
-          styleUrl: geoXML3.nodeValue(node.getElementsByTagName('styleUrl')[0])
+          styleUrl: geoXML3.nodeValue(node.getElementsByTagName('styleUrl')[0]),
+          id: node.getAttribute('id')
         };
         placemark.style = doc.styles[placemark.styleUrl] || clone(defaultStyle);
         // inline style overrides shared style
@@ -489,7 +490,10 @@ var coordListA = [];
               doc.markers = doc.markers || [];
               if (doc.reload) {
                 for (var j = 0; j < doc.markers.length; j++) {
-                  if (doc.markers[j].getPosition().equals(placemark.latlng)) {
+                    if ((doc.markers[j].id == placemark.id) ||
+			// if no id, check position
+                        (!doc.markers[j].id && 
+                         (doc.markers[j].getPosition().equals(placemark.latlng)))) {
                     found = doc.markers[j].active = true;
                     break;
                   }
@@ -500,7 +504,10 @@ var coordListA = [];
             if (!found) {
               // Call the built-in marker creator
               marker = createMarker(placemark, doc);
-              marker.active = true;
+              if (marker) { 
+                marker.active = true;
+                marker.id = placemark.id;
+              }
             }
           }
          }
