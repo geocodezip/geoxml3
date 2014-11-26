@@ -1148,10 +1148,10 @@ geoXML3.fetchXML = function (url, callback) {
     geoXML3.log('Unable to create XHR object');
     callback(null);
   } else {
+      xhrFetcher.fetcher.open('GET', url, true);
       if (xhrFetcher.fetcher.overrideMimeType) {
         xhrFetcher.fetcher.overrideMimeType('text/xml');
       }
-      xhrFetcher.fetcher.open('GET', url, true);
       xhrFetcher.fetcher.onreadystatechange = function () {
       if (xhrFetcher.fetcher.readyState === 4) {
         // Retrieval complete
