@@ -1477,8 +1477,8 @@ geoXML3.fetchXML = function (url, callback) {
     }
   }
 
-  if (!!xhrFetcher.fetcher.overrideMimeType) xhrFetcher.fetcher.overrideMimeType('text/xml');
   xhrFetcher.fetcher.open('GET', url, true);
+  if (!!xhrFetcher.fetcher.overrideMimeType) xhrFetcher.fetcher.overrideMimeType('text/xml');
   xhrFetcher.fetcher.onreadystatechange = function () {
     if (xhrFetcher.fetcher.readyState === 4) {
       // Retrieval complete
