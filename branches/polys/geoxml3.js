@@ -337,7 +337,7 @@ var coordListA = [];
 
   var render = function (responseXML, doc) {
     // Callback for retrieving a KML document: parse the KML and display it on the map
-    if (!responseXML) {
+    if (!responseXML || responseXML == "failed parse") {
       // Error retrieving the data
       geoXML3.log('Unable to retrieve ' + doc.url);
       if (parserOptions.failedParse) {
@@ -1114,7 +1114,7 @@ geoXML3.fetchers = [];
  * @return {Element|Document} DOM.
  */
 geoXML3.xmlParse = function (str) {
-  if (typeof ActiveXObject != 'undefined' && typeof GetObject != 'undefined') {
+  if (typeof ActiveXObject != 'undefined') {
     var doc = new ActiveXObject('Microsoft.XMLDOM');
     doc.loadXML(str);
     return doc;
@@ -1124,8 +1124,23 @@ geoXML3.xmlParse = function (str) {
     return (new DOMParser()).parseFromString(str, 'text/xml');
   }
 
-  return createElement('div', null);
+  return document.createElement('div', null);
 }
+
+// from http://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross
+geoXML3.isParseError = function(parsedDocument) {
+    // parser and parsererrorNS could be cached on startup for efficiency
+    var p = new DOMParser(),
+        errorneousParse = p.parseFromString('<', 'text/xml'),
+        parsererrorNS = errorneousParse.getElementsByTagName("parsererror")[0].namespaceURI;
+
+    if (parsererrorNS === 'http://www.w3.org/1999/xhtml') {
+        // In PhantomJS the parseerror element doesn't seem to have a special namespace, so we are just guessing here :(
+        return parsedDocument.getElementsByTagName("parsererror").length > 0;
+    }
+
+    return parsedDocument.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0;
+};
 
 geoXML3.fetchXML = function (url, callback) {
   function timeoutHandler() {
@@ -1165,6 +1180,10 @@ geoXML3.fetchXML = function (url, callback) {
           var xml = geoXML3.xmlParse(xhrFetcher.fetcher.responseText);
           if (xml.parseError && (xml.parseError.errorCode != 0)) {
            geoXML3.log("XML parse error "+xml.parseError.errorCode+", "+xml.parseError.reason+"\nLine:"+xml.parseError.line+", Position:"+xml.parseError.linepos+", srcText:"+xml.parseError.srcText);
+           xml = "failed parse"
+          } else if (geoXML3.isParseError(xml)) {
+           geoXML3.log("XML parse error");
+           xml = "failed parse"
           }
           callback(xml);
         }
