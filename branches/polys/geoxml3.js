@@ -1114,7 +1114,7 @@ geoXML3.fetchers = [];
  * @return {Element|Document} DOM.
  */
 geoXML3.xmlParse = function (str) {
-  if (typeof ActiveXObject != 'undefined') {
+  if ((typeof ActiveXObject != 'undefined') || ("ActiveXObject" in window)) {
     var doc = new ActiveXObject('Microsoft.XMLDOM');
     doc.loadXML(str);
     return doc;
