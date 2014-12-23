@@ -1129,6 +1129,8 @@ geoXML3.xmlParse = function (str) {
 
 // from http://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross
 geoXML3.isParseError = function(parsedDocument) {
+    if ((typeof ActiveXObject != 'undefined') || ("ActiveXObject" in window))
+	return false;
     // parser and parsererrorNS could be cached on startup for efficiency
     var p = new DOMParser(),
         errorneousParse = p.parseFromString('<', 'text/xml'),
