@@ -409,7 +409,7 @@ function processStyleUrl(node) {
 
   var render = function (responseXML, doc) {
     // Callback for retrieving a KML document: parse the KML and display it on the map
-    if (!responseXML) {
+    if (!responseXML || responseXML == "failed parse") {
       // Error retrieving the data
       geoXML3.log('Unable to retrieve ' + doc.url);
       if (parserOptions.failedParse) parserOptions.failedParse(doc);
@@ -1426,7 +1426,7 @@ geoXML3.fetchers = [];
  * @return {Element|Document} DOM.
  */
 geoXML3.xmlParse = function (str) {
-  if (typeof ActiveXObject != 'undefined' && typeof GetObject != 'undefined') {
+  if ((typeof ActiveXObject != 'undefined') || ("ActiveXObject" in window)) {
     var doc = new ActiveXObject('Microsoft.XMLDOM');
     doc.loadXML(str);
     return doc;
@@ -1436,8 +1436,31 @@ geoXML3.xmlParse = function (str) {
     return (new DOMParser()).parseFromString(str, 'text/xml');
   }
 
-  return createElement('div', null);
+  return document.createElement('div', null);
 }
+
+/**
+ * Checks for XML parse error.
+ *
+ * @param {xmlDOM} XML DOM.
+ * @return boolean.
+ */
+// from http://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross
+geoXML3.isParseError = function(parsedDocument) {
+    if ((typeof ActiveXObject != 'undefined') || ("ActiveXObject" in window))
+	return false;
+    // parser and parsererrorNS could be cached on startup for efficiency
+    var p = new DOMParser(),
+        errorneousParse = p.parseFromString('<', 'text/xml'),
+        parsererrorNS = errorneousParse.getElementsByTagName("parsererror")[0].namespaceURI;
+
+    if (parsererrorNS === 'http://www.w3.org/1999/xhtml') {
+        // In PhantomJS the parseerror element doesn't seem to have a special namespace, so we are just guessing here :(
+        return parsedDocument.getElementsByTagName("parsererror").length > 0;
+    }
+
+    return parsedDocument.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0;
+};
 
 /**
  * Fetches a XML document.
@@ -1489,15 +1512,25 @@ geoXML3.fetchXML = function (url, callback) {
       }
       // Returned successfully
       else {
-        if (xhrFetcher.fetcher.responseXML) {
+       if (xhrFetcher.fetcher.responseXML) {
         // Sometimes IE will get the data, but won't bother loading it as an XML doc
-        var xmlDoc = xhrFetcher.fetcher.responseXML;
-        if (xmlDoc && !xmlDoc.documentElement && !xmlDoc.ownerElement) xmlDoc.loadXML(xhrFetcher.fetcher.responseText);
-          callback(xmlDoc);          
-        } else // handle valid xml sent with wrong MIME type 
-          callback(geoXML3.xmlParse(xhrFetcher.fetcher.responseText));
+        var xml = xhrFetcher.fetcher.responseXML;
+        if (xml && !xml.documentElement && !xml.ownerElement) {
+         xml.loadXML(xhrFetcher.fetcher.responseText);
+        }
+       } else {// handle valid xml sent with wrong MIME type 
+        xml=geoXML3.xmlParse(xhrFetcher.fetcher.responseText);
+       }
+       // handle parse errors
+       if (xml.parseError && (xml.parseError.errorCode != 0)) {
+        geoXML3.log("XML parse error "+xml.parseError.errorCode+", "+xml.parseError.reason+"\nLine:"+xml.parseError.line+", Position:"+xml.parseError.linepos+", srcText:"+xml.parseError.srcText);
+        xml = "failed parse"
+       } else if (geoXML3.isParseError(xml)) {
+        geoXML3.log("XML parse error");
+        xml = "failed parse"
+       }
+       callback(xml);          
       }
-
       // We're done with this fetcher object
       geoXML3.fetchers.push(xhrFetcher);
     }
