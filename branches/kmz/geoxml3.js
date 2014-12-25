@@ -277,7 +277,7 @@ function processStyleUrl(node) {
           h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'h')[0], icon.dim.h))
         };
 
-        styleNodes = getElementsByTagName(thisNode, 'hotSpot');
+        styleNodes = getElementsByTagName(styleNodes[0], 'hotSpot')[0];
         if (!!styleNodes && styleNodes.length > 0) {
           icon.hotSpot = {
             x:      styleNodes[0].getAttribute('x'),
@@ -290,21 +290,27 @@ function processStyleUrl(node) {
         // certain occasions where we need the pixel size of the image (like the default settings...)
         // (NOTE: Scale is applied to entire image, not just the section of the icon palette.  So,
         //  if we need scaling, we'll need the img dimensions no matter what.)
-        if ( (icon.dim.w < 0 || icon.dim.h < 0) && (icon.xunits != 'pixels' || icon.yunits == 'fraction') || icon.scale != 1.0) {
+        if (true /* (icon.dim.w < 0 || icon.dim.h < 0) && (icon.xunits != 'pixels' || icon.yunits == 'fraction') || icon.scale != 1.0 */) {
           // (hopefully, this will load by the time we need it...)
           icon.img = new Image();
           icon.img.onload = function() {
             if (icon.dim.w < 0 || icon.dim.h < 0) {
               icon.dim.w = this.width;
               icon.dim.h = this.height;
+            } else {
+              icon.dim.th = this.height;
             }
           };
           icon.img.src = icon.url;
 
           // sometimes the file is already cached and it never calls onLoad
           if (icon.img.width > 0) {
-            icon.dim.w = icon.img.width;
-            icon.dim.h = icon.img.height;
+            if (icon.dim.w < 0 || icon.dim.h < 0) {
+             icon.dim.w = icon.img.width;
+             icon.dim.h = icon.img.height;
+            } else {
+             icon.dim.th = icon.img.height;
+            }
           }
         }
       }
@@ -932,7 +938,7 @@ function processStyleUrl(node) {
 
   var processStyleID = function (style) {
     var icon = style.icon;
-    if (!icon.href) return;
+    if (!icon || !icon.href) return;
 
     if (icon.img && !icon.img.complete && (icon.dim.w < 0) && (icon.dim.h < 0) ) {
       // we're still waiting on the image loading (probably because we've been blocking since the declaration)
@@ -942,6 +948,8 @@ function processStyleUrl(node) {
         if (icon.dim.w < 0 || icon.dim.h < 0) {
           icon.dim.w = this.width;
           icon.dim.h = this.height;
+        } else {
+          icon.dim.th = this.height;
         }
         processStyleID(style);
 
@@ -956,25 +964,35 @@ function processStyleUrl(node) {
       };
       return;
     }
-    else if (icon.dim.w < 0 || icon.dim.h < 0) {
+    else { //if (icon.dim.w < 0 || icon.dim.h < 0) {
       if (icon.img && icon.img.complete) {
         // sometimes the file is already cached and it never calls onLoad
+        if (icon.dim.w < 0 || icon.dim.h < 0) {
         icon.dim.w = icon.img.width;
         icon.dim.h = icon.img.height;
+        } else {
+          icon.dim.th = icon.img.height;
+        }
       }
       else {
         // settle for a default of 32x32
         icon.dim.whGuess = true;
         icon.dim.w = 32;
         icon.dim.h = 32;
+        icon.dim.th = 32;
       }
     }
 
     // pre-scaled variables
     var rnd = Math.round;
+    var y = icon.dim.y;
+    if (typeof icon.dim.th !== 'undefined' && icon.dim.th != icon.dim.h) { // palette - reverse kml y for maps
+      y = Math.abs(y - (icon.dim.th - icon.dim.h));
+    }
+
     var scaled = {
       x:  icon.dim.x     * icon.scale,
-      y:  icon.dim.y     * icon.scale,
+      y: y * icon.scale,
       w:  icon.dim.w     * icon.scale,
       h:  icon.dim.h     * icon.scale,
       aX: icon.hotSpot.x * icon.scale,
