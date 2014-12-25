@@ -262,6 +262,16 @@ function processStyleUrl(node) {
       // style.icon.color     = (unsupported; not supported in API)
       // style.icon.colorMode = (unsupported; not supported in API)
 
+      styleNodes = getElementsByTagName(styleNodes[0], 'hotSpot');
+      if (!!styleNodes && styleNodes.length > 0) {
+        icon.hotSpot = {
+          x:      styleNodes[0].getAttribute('x'),
+          y:      styleNodes[0].getAttribute('y'),
+          xunits: styleNodes[0].getAttribute('xunits'),
+          yunits: styleNodes[0].getAttribute('yunits')
+        };
+      }
+
       styleNodes = getElementsByTagName(thisNode, 'Icon');
       if (!!styleNodes && styleNodes.length > 0) {
         icon.href = nodeValue(getElementsByTagName(styleNodes[0], 'href')[0]);
@@ -276,16 +286,6 @@ function processStyleUrl(node) {
           w: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'w')[0], icon.dim.w)),
           h: parseInt(nodeValue(getElementsByTagNameNS(styleNodes[0], gxNS, 'h')[0], icon.dim.h))
         };
-
-        styleNodes = getElementsByTagName(styleNodes[0], 'hotSpot')[0];
-        if (!!styleNodes && styleNodes.length > 0) {
-          icon.hotSpot = {
-            x:      styleNodes[0].getAttribute('x'),
-            y:      styleNodes[0].getAttribute('y'),
-            xunits: styleNodes[0].getAttribute('xunits'),
-            yunits: styleNodes[0].getAttribute('yunits')
-          };
-        }
 
         // certain occasions where we need the pixel size of the image (like the default settings...)
         // (NOTE: Scale is applied to entire image, not just the section of the icon palette.  So,
