@@ -783,44 +783,41 @@ var coordListA = [];
 	  var anchorPoint = new google.maps.Point(16*style.scale, 16*style.scale);
 	}
         // Init the style object with a standard KML icon
-        style.icon =  new google.maps.MarkerImage(
-          style.href,
-          new google.maps.Size(32*style.scale, 32*style.scale),
-          zeroPoint,
-          // bottom middle 
-          anchorPoint,
-          new google.maps.Size(32*style.scale, 32*style.scale)
-
-        );
-
+        style.icon =  {
+         url: style.href,
+         size: new google.maps.Size(32*style.scale, 32*style.scale),
+         origin: zeroPoint,
+         // bottom middle 
+         anchor: anchorPoint,
+         scaledSize: new google.maps.Size(32*style.scale, 32*style.scale)};
         // Look for a predictable shadow
         var stdRegEx = /\/(red|blue|green|yellow|lightblue|purple|pink|orange)(-dot)?\.png/;
         var shadowSize = new google.maps.Size(59, 32);
 	var shadowPoint = new google.maps.Point(16,32);
         if (stdRegEx.test(style.href)) {
           // A standard GMap-style marker icon
-          style.shadow = new google.maps.MarkerImage(
-              'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
-              shadowSize,
-              zeroPoint,
-              shadowPoint,
-              shadowSize);
+          style.shadow = {
+	    url: 'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
+	    size: shadowSize,
+	    origin: zeroPoint,
+	    anchor: shadowPoint,
+	    scaledSize: shadowSize};
         } else if (style.href.indexOf('-pushpin.png') > -1) {
           // Pushpin marker icon
-          style.shadow = new google.maps.MarkerImage(
-            'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',
-            shadowSize,
-            zeroPoint,
-            shadowPoint,
-            shadowSize);
+          style.shadow = {
+	    url: 'http://maps.google.com/mapfiles/ms/micons/pushpin_shadow.png',
+	    size: shadowSize,
+	    origin: zeroPoint,
+	    anchor: shadowPoint,
+	    scaledSize: shadowSize};
         } else {
           // Other MyMaps KML standard icon
-          style.shadow = new google.maps.MarkerImage(
-            style.href.replace('.png', '.shadow.png'),	      		   
-            shadowSize,	   					   
-            zeroPoint,					
-            shadowPoint,
-            shadowSize);
+          style.shadow = {
+	    url: style.href.replace('.png', '.shadow.png'),
+	    size: shadowSize,
+	    origin: zeroPoint,					
+	    anchor: shadowPoint,
+	    scaledSize: shadowSize};
         }
       }
     }
