@@ -172,7 +172,16 @@ geoXML3.parser = function (options) {
     resFunc = resFunc || function (responseXML) { render(responseXML, doc); };
 
     if (typeof ZipFile === 'function' && typeof JSIO === 'object' && typeof JSIO.guessFileType === 'function') {  // KMZ support requires these modules loaded
-      contentType = JSIO.guessFileType(doc.baseUrl);
+      // if url is a data URI scheme, do not guess type based on extension.
+      if (/^data:[^,]*(kmz)/.test(doc.baseUrl)) {
+         contentType = JSIO.FileType.Binary;
+      } else if (/^data:[^,]*(kml|xml)/.test(doc.baseUrl)) {
+         contentType = JSIO.FileType.XML;
+      } else if (/^data:/.test(doc.baseUrl)) {
+         contentType = JSIO.FileType.Unknown;
+      } else {
+         contentType = JSIO.guessFileType(doc.baseUrl);
+      }
       if (contentType == JSIO.FileType.Binary || contentType == JSIO.FileType.Unknown) {
          doc.isCompressed = true;
          doc.baseDir = doc.baseUrl + '/';
