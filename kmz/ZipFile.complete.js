@@ -2078,24 +2078,25 @@
 
             /*
 	    Data descriptor Offset 	Bytes 	Description[25]
-             0 	0/4 	Optional data descriptor signature = 0x08074b50
-             0/4 	4 	CRC-32
-             4/8 	4 	Compressed size
-             8/12 	4 	Uncompressed size
+            0 		0/4 	Optional data descriptor signature = 0x08074b50
+            0/4 	4 	CRC-32
+            4/8 	4 	Compressed size
+            8/12 	4 	Uncompressed size
             */
 	    
 	    if ((entry.bitField & 0x0008) == 0x0008){
                 thisZipFile.status.push("INFO: This zipfile uses a bit 3 trailing data descriptor");
                 // return null;
                 var currentPosition = thisZipFile.binaryStream.position;
-              if (thisZipFile.verbose>2) {
-                thisZipFile.status.push("INFO: currentPosition 0x" +
+                var dataDescLength = 0;
+                if (thisZipFile.verbose>2) {
+                  thisZipFile.status.push("INFO: currentPosition 0x" +
                                  JSIO.decimalToHexString(thisZipFile.binaryStream.position) +
                                  " (" + thisZipFile.binaryStream.position + ")");
-                thisZipFile.status.push("INFO: length 0x" +
+                  thisZipFile.status.push("INFO: length 0x" +
                                  JSIO.decimalToHexString(thisZipFile.binaryStream.length) +
                                  " (" + thisZipFile.binaryStream.length + ")");
-              }
+                }
 
 		for (var i=0; i<128; i++) { // maximum search backwards from end for signature is 128 bytes
                  thisZipFile.binaryStream.seek(thisZipFile.binaryStream.length-i-4,JSIO.SeekOrigin.Begin);                
@@ -2110,6 +2111,7 @@
                   entry.crc32             = thisZipFile.binaryStream.readNumber(4);
                   entry.compressedSize    = thisZipFile.binaryStream.readNumber(4);
                   entry.uncompressedSize  = thisZipFile.binaryStream.readNumber(4);
+                  dataDescLength = 16;
 		  break;
                  } 
                 }
@@ -2132,7 +2134,7 @@
                                  " (" + entry.lengthOfHeader + ")");
                 }
 
-                thisZipFile.binaryStream.position = currentPosition;
+                thisZipFile.binaryStream.position = currentPosition+dataDescLength;
             }
 
             entry.totalEntrySize = entry.lengthOfHeader + entry.compressedSize;
