@@ -697,6 +697,29 @@ function processStyleUrl(node) {
           }
         }
 
+	// parse MultiTrack/Track
+        var TrackNodes = getElementsByTagNameNS(node,gxNS,"Track");
+        var coordListA = [];
+        if (TrackNodes.length > 0) {  
+          for (var i=0; i<TrackNodes.length; i++) {
+            var coordNodes = getElementsByTagNameNS(TrackNodes[i],gxNS,"coord");
+            var coordList = [];
+            for (var j=0; j<coordNodes.length;j++) { 
+              var coords = geoXML3.nodeValue(coordNodes[j]).trim();
+              coords = coords.split(/\s+/g);
+              if (!isNaN(coords[0]) && !isNaN(coords[1])) {
+                coordList.push({
+                  lat: parseFloat(coords[1]), 
+                  lng: parseFloat(coords[0]), 
+                  alt: parseFloat(coords[2])
+                });
+              }
+            }
+	    coordListA.push({coordinates:coordList});
+          }
+          placemark.Track = coordListA;
+        }
+	      
         // call the custom placemark parse function if it is defined
         if (!!parserOptions.pmParseFn) parserOptions.pmParseFn(node, placemark);
         doc.placemarks.push(placemark);
@@ -742,6 +765,7 @@ function processStyleUrl(node) {
         if (!!doc) {
           if (placemark.Polygon)    doc.gpolygons  = doc.gpolygons  || [];
           if (placemark.LineString) doc.gpolylines = doc.gpolylines || [];
+          if (placemark.Track)      doc.gpolylines = doc.gpolylines || [];
         }
 
         var polyCreateFunc = parserOptions.createPolygon    || createPolygon;
@@ -751,6 +775,10 @@ function processStyleUrl(node) {
           if (poly) poly.active = placemark.visibility;
         }
         if (placemark.LineString) {
+          line = lineCreateFunc(placemark,doc);
+          if (line) line.active = placemark.visibility;
+        }
+	if (placemark.Track) { // gx:Track polyline
           line = lineCreateFunc(placemark,doc);
           if (line) line.active = placemark.visibility;
         }
@@ -1192,15 +1220,28 @@ function processStyleUrl(node) {
   var createPolyline = function(placemark, doc) {
     var paths = [];
     var bounds = new google.maps.LatLngBounds();
-    for (var j=0; j<placemark.LineString.length; j++) {
-      var path = [];
-      var coords = placemark.LineString[j].coordinates;
-      for (var i=0;i<coords.length;i++) {
-        var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
-        path.push(pt);
-        bounds.extend(pt);
+    if (placemark.LineString) {
+      for (var j=0; j<placemark.LineString.length; j++) {
+        var path = [];
+        var coords = placemark.LineString[j].coordinates;
+        for (var i=0;i<coords.length;i++) {
+          var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
+          path.push(pt);
+          bounds.extend(pt);
+        }
+        paths.push(path);
       }
-      paths.push(path);
+    } else if (placemark.Track) {
+      for (var j=0; j<placemark.Track.length; j++) {
+        var path = [];
+        var coords = placemark.Track[j].coordinates;
+        for (var i=0;i<coords.length;i++) {
+          var pt = new google.maps.LatLng(coords[i].lat, coords[i].lng);
+          path.push(pt);
+          bounds.extend(pt);
+        }
+        paths.push(path);
+      }
     }
     // point to open the infowindow if triggered
     var point = paths[0][Math.floor(path.length/2)];
@@ -1665,13 +1706,19 @@ geoXML3.fetchZIP = function (url, callback, parser) {
     // Check for ERRORs in zip.status
     for (var i = 0; i < zip.status.length; i++) {
       var msg = zip.status[i];
-      if      (msg.indexOf("ERROR") == 0) {
+      if (msg.indexOf("ERROR") == 0) {
         geoXML3.log('HTTP/ZIP error retrieving ' + url + ': ' + msg);
         callback();
         return;
       }
-      else if (msg.indexOf("WARNING") == 0) {  // non-fatal, but still might be useful
+      else if (msg.indexOf("EXCEPTION") == 0) {  
+        geoXML3.log('HTTP/ZIP exception retrieving ' + url + ': ' + msg);
+        callback();
+        return;
+      } else if (msg.indexOf("WARNING") == 0) {  // non-fatal, but still might be useful
         geoXML3.log('HTTP/ZIP warning retrieving ' + url + ': ' + msg);
+      } else if (msg.indexOf("INFO") == 0) {  // non-fatal, but still might be useful
+        geoXML3.log('HTTP/ZIP info retrieving ' + url + ': ' + msg);
       }
     }
 
@@ -1738,7 +1785,7 @@ geoXML3.fetchZIP = function (url, callback, parser) {
     };
     var kmlExtractCb = function(entry, entryContent) {
       if ((typeof entryContent.description == "string") && (entryContent.name == "Error")) {
-        geoXML3.log('KMZ error extracting ' + mdUrl + ': ' + entryContent.description);
+        geoXML3.log('KMZ error extracting ' + entry.name + ': ' + entryContent.description);
         callback();
         return;
       }
@@ -1776,7 +1823,7 @@ geoXML3.fetchZIP = function (url, callback, parser) {
       if (ext === "kml") entry.extract(kmlExtractCb);
       else               entry.extract(extractCb);
     }
-  });
+  }); //,3 for most verbose logging
 
 };
 
