@@ -1761,6 +1761,7 @@
                 callback(thisEntry, result);
             }
             catch (exc1) {
+                thisZipFile.status.push("EXCEPTION: " + exc1.message);
                 callback(thisEntry, exc1);
             }
         });
@@ -1976,17 +1977,22 @@
             entry.compressedSize    = thisZipFile.binaryStream.readNumber(4);
             entry.uncompressedSize  = thisZipFile.binaryStream.readNumber(4);
 
+            thisZipFile.status.push("INFO: crc32 0x" +
+                             JSIO.decimalToHexString(entry.crc32) +
+                             " (" + entry.crc32 + ")");
+            thisZipFile.status.push("INFO: compressedSize 0x" +
+                             JSIO.decimalToHexString(entry.compressedSize) +
+                             " (" + entry.compressedSize + ") bytes");
+            thisZipFile.status.push("INFO: uncompressedSize 0x" +
+                             JSIO.decimalToHexString(entry.uncompressedSize) +
+                             " (" + entry.uncompressedSize + ") bytes");
+
             if ((entry.bitField & 0x01) == 0x01){
                 thisZipFile.status.push("This zipfile uses Encryption, which is not supported by ZipFile.js.");
                 return null;
             }
 
             entry.utf8 = ((entry.bitField & 0x0800) == 0x0800);
-
-            if ((entry.bitField & 0x0008) == 0x0008){
-                thisZipFile.status.push("This zipfile uses a bit 3 trailing data descriptor, which is not supported by ZipFile.js.");
-                return null;
-            }
 
             if (entry.compressedSize == 0xFFFFFFFF ||
                 entry.uncompressedSize == 0xFFFFFFFF) {
@@ -2061,6 +2067,63 @@
             }
 
             entry.lengthOfHeader = bytesRead;
+            thisZipFile.status.push("INFO: lengthOfHeader 0x" +
+                             JSIO.decimalToHexString(entry.lengthOfHeader) +
+                             " (" + entry.lengthOfHeader + ")");
+
+            /*
+	    Data descriptor Offset 	Bytes 	Description[25]
+             0 	0/4 	Optional data descriptor signature = 0x08074b50
+             0/4 	4 	CRC-32
+             4/8 	4 	Compressed size
+             8/12 	4 	Uncompressed size
+            */
+	    
+	    if ((entry.bitField & 0x0008) == 0x0008){
+                thisZipFile.status.push("INFO: This zipfile uses a bit 3 trailing data descriptor");
+                // return null;
+                var currentPosition = thisZipFile.binaryStream.position;
+                thisZipFile.status.push("INFO: currentPosition 0x" +
+                                 JSIO.decimalToHexString(thisZipFile.binaryStream.position) +
+                                 " (" + thisZipFile.binaryStream.position + ")");
+                thisZipFile.status.push("INFO: length 0x" +
+                                 JSIO.decimalToHexString(thisZipFile.binaryStream.length) +
+                                 " (" + thisZipFile.binaryStream.length + ")");
+
+		for (var i=0; i<128; i++) { // maximum search backwards from end for signature is 128 bytes
+                 thisZipFile.binaryStream.seek(thisZipFile.binaryStream.length-i-4,JSIO.SeekOrigin.Begin);                
+                 var num = thisZipFile.binaryStream.readNumber(4)
+                 thisZipFile.status.push("INFO: ["+i+"] 0x" +
+                               JSIO.decimalToHexString(num) +
+					 " (" + num + ")");
+		 if (num == ZipFile.Signatures.DataDescriptor) {
+                  sig = num;
+                  entry.crc32             = thisZipFile.binaryStream.readNumber(4);
+                  entry.compressedSize    = thisZipFile.binaryStream.readNumber(4);
+                  entry.uncompressedSize  = thisZipFile.binaryStream.readNumber(4);
+		  break;
+                 } 
+                }
+
+                thisZipFile.status.push("INFO: sig 0x" +
+                                 JSIO.decimalToHexString(sig) +
+                                 " (" + sig + ")");
+                thisZipFile.status.push("INFO: crc32 0x" +
+                                 JSIO.decimalToHexString(entry.crc32) +
+                                 " (" + entry.crc32 + ")");
+                thisZipFile.status.push("INFO: compressedSize 0x" +
+                                 JSIO.decimalToHexString(entry.compressedSize) +
+                                 " (" + entry.compressedSize + ") bytes");
+                thisZipFile.status.push("INFO: uncompressedSize 0x" +
+                                 JSIO.decimalToHexString(entry.uncompressedSize) +
+                                 " (" + entry.uncompressedSize + ") bytes");
+                thisZipFile.status.push("INFO: lengthOfHeader 0x" +
+                                 JSIO.decimalToHexString(entry.lengthOfHeader) +
+                                 " (" + entry.lengthOfHeader + ")");
+
+                thisZipFile.binaryStream.position = currentPosition;
+            }
+
             entry.totalEntrySize = entry.lengthOfHeader + entry.compressedSize;
 
             // seek past the data without reading it. We will read on Extract()
@@ -2100,7 +2163,7 @@
             }
             catch (exc1)
             {
-                thisZipFile.status.push("Exception: " + exc1.message);
+                thisZipFile.status.push("EXCEPTION: " + exc1.message);
                 callback(thisZipFile);
             }
         };
@@ -2114,7 +2177,8 @@
     ZipFile.Signatures = {
         Entry                 : 0x04034b50,
         EndOfCentralDirectory : 0x06054b50,
-        DirEntry              : 0x02014b50
+        DirEntry              : 0x02014b50,
+	DataDescriptor        : 0x08074b50
     };
 
     ZipFile.Version = version;
