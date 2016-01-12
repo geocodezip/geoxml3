@@ -1761,7 +1761,7 @@
                 callback(thisEntry, result);
             }
             catch (exc1) {
-                thisZipFile.status.push("EXCEPTION: " + exc1.message);
+                this.zipfile.status.push("EXCEPTION: " + exc1.message);
                 callback(thisEntry, exc1);
             }
         });
