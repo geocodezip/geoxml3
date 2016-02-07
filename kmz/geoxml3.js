@@ -171,6 +171,21 @@ geoXML3.parser = function (options) {
   function fetchDoc(url, doc, resFunc) {
     resFunc = resFunc || function (responseXML) { render(responseXML, doc); };
 
+    function tryWithKML(responseXML) {
+      // nasty if condition copied from render function.
+      if (!responseXML ||
+          responseXML == "failed parse" ||
+          (responseXML.parseError && responseXML.parseError.errorCode != 0) ||
+          (responseXML.documentElement && responseXML.documentElement.nodeName == 'parsererror') ||
+          !doc) {
+        doc.isCompressed = false;
+        doc.baseDir = defileURL(doc.baseUrl);
+        geoXML3.fetchXML(url, resFunc);
+      } else {
+        resFunc(responseXML);
+      }
+    }
+
     if (typeof ZipFile === 'function' && typeof JSIO === 'object' && typeof JSIO.guessFileType === 'function') {  // KMZ support requires these modules loaded
       // if url is a data URI scheme, do not guess type based on extension.
       if (/^data:[^,]*(kmz)/.test(doc.baseUrl)) {
@@ -182,16 +197,16 @@ geoXML3.parser = function (options) {
       } else {
          contentType = JSIO.guessFileType(doc.baseUrl);
       }
+      // If the file type is unknown, try first as zip. In case of error, as kml.
+      var localFunc = contentType == JSIO.FileType.Unknown ? tryWithKML : resFunc;
       if (contentType == JSIO.FileType.Binary || contentType == JSIO.FileType.Unknown) {
          doc.isCompressed = true;
          doc.baseDir = doc.baseUrl + '/';
-         geoXML3.fetchZIP(url, resFunc, doc.internals.parser);
+         geoXML3.fetchZIP(url, localFunc, doc.internals.parser);
          return;
       }
     }
-    doc.isCompressed = false;
-    doc.baseDir = defileURL(doc.baseUrl);
-    geoXML3.fetchXML(url, resFunc);
+    tryWithKML(null);
   }
 
   var hideDocument = function (doc) {
@@ -1811,6 +1826,13 @@ geoXML3.fetchZIP = function (url, callback, parser) {
       }
       return;
     };
+
+    if (zip.entries.length == 0) {
+      // no entries, no fun.
+      callback();
+      return;
+    }
+
     for (var i = 0; i < zip.entries.length; i++) {
       var entry = zip.entries[i];
       var ext = entry.name.substring(entry.name.lastIndexOf(".") + 1).toLowerCase();
