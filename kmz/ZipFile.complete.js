@@ -345,25 +345,25 @@
     _byteReaderBase.prototype.readByte = function(){
         if (this.length && this.position >= this.length) return null;  // EOF
 
-        var byte;
-        if      (this.array)  byte = this.array[this.position++];
-        else if (this.length) byte = this.readByteAt(this.position++);
-        else if (this.stream) byte = this.stream.read(1)[0];
-        else                  byte = this.read(1)[0];
-        return (byte === null || byte === undefined) ? null : byte;
+        var oneByte;
+        if      (this.array)  oneByte = this.array[this.position++];
+        else if (this.length) oneByte = this.readByteAt(this.position++);
+        else if (this.stream) oneByte = this.stream.read(1)[0];
+        else                  oneByte = this.read(1)[0];
+        return (oneByte === null || oneByte === undefined) ? null : oneByte;
     };
     _byteReaderBase.prototype.readByteAt = function(i) {
         var pos  = this.position;  // no position changes on this one
         if (i === null || i === undefined) i = this.position;
 
-        var byte;
-        if      (this.array)  byte = this.array[i];
-        else if (i === pos)   byte = this.readByte();
-        else if (this.stream) byte = this.stream.read(1, i)[0];
-        else                  byte = this.read(1, i)[0];
+        var oneByte;
+        if      (this.array)  oneByte = this.array[i];
+        else if (i === pos)   oneByte = this.readByte();
+        else if (this.stream) oneByte = this.stream.read(1, i)[0];
+        else                  oneByte = this.read(1, i)[0];
 
         this.position = pos;
-        return (byte === null || byte === undefined) ? null : byte;
+        return (oneByte === null || oneByte === undefined) ? null : oneByte;
     }
 
     _byteReaderBase.prototype.readBytes = _byteReaderBase.prototype.read;
@@ -758,8 +758,8 @@
     bus.prototype = new JSIO._ByteReaderBase();
 
     bus.prototype.readByte = function(){
-        var byte = this.readByteAt(this.position++);
-        return (byte === null || byte === undefined) ? null : byte;
+        var oneByte = this.readByteAt(this.position++);
+        return (oneByte === null || oneByte === undefined) ? null : oneByte;
     };
 
     JSIO.BinaryUrlStream = bus;
@@ -1601,8 +1601,8 @@
     // public instance functions
 
     _inflatingReader.prototype.readByte = function() {
-        var byte = this.read(1)[0];
-        return (byte === null || byte === undefined) ? null : byte;
+        var oneByte = this.read(1)[0];
+        return (oneByte === null || oneByte === undefined) ? null : oneByte;
     };
 
     _inflatingReader.prototype.read = function(len) {
