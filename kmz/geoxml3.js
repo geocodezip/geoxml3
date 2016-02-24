@@ -1079,14 +1079,14 @@ function processStyleUrl(node) {
     }
 
     var scaled = {
-      x:  icon.dim.x     * icon.scale,
+      x: icon.dim.x     * icon.scale,
       y: y * icon.scale,
-      w:  icon.dim.w     * icon.scale,
-      h:  icon.dim.h     * icon.scale,
-      aX: icon.hotSpot.x * icon.scale,
-      aY: icon.hotSpot.y * icon.scale,
-      iW: (icon.img ? icon.img.width  : icon.dim.w) * icon.scale,
-      iH: (icon.img ? icon.img.height : icon.dim.h) * icon.scale
+      w: icon.dim.w     * icon.scale,
+      h: icon.dim.h     * icon.scale,
+      aX:icon.hotSpot.x * icon.scale,
+      aY:icon.hotSpot.y * icon.scale,
+      iW:(icon.img ? icon.img.width  : icon.dim.w) * icon.scale,
+      iH:(icon.img ? icon.img.height : icon.dim.h) * icon.scale
     };
 
     // Figure out the anchor spot
@@ -1096,9 +1096,13 @@ function processStyleUrl(node) {
     switch (icon.hotSpot.xunits) {
       case 'fraction':    aX = rnd(scaled.aX * icon.dim.w); break;
       case 'insetPixels': aX = rnd(icon.dim.w * icon.scale - scaled.aX); break;
-      default:            aX = rnd(scaled.aX); break;  // already pixels
+      default:            aX = rnd(scaled.aX); break; // already pixels
     }
-    aY = scaled.h - rnd( ((icon.hotSpot.yunits === 'fraction') ? icon.dim.h : 1) * scaled.aY );  // insetPixels Y = pixels Y
+    switch(icon.hotSpot.yunits) {
+      case 'fraction':    aY = scaled.h - rnd(icon.dim.h * scaled.aY);   break;
+      case 'insetPixels': aY = rnd(scaled.aY); break; 
+      default:            aY = rnd(icon.dim.h * icon.scale - scaled.aY); break;
+    }
     var iconAnchor = new google.maps.Point(aX, aY);
 
     // Sizes
