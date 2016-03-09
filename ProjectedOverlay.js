@@ -13,6 +13,7 @@
 //    addZoom: Added Zoom factor as a parameter to the imageUrl (include complete parameter, including separater like '?zoom='
 //    percentOpacity: Default 50, percent opacity to use when the image is loaded 0-100.
 //    id: Default imageUrl, ID of the div
+//    rotation: default 0, degrees clockwise to rotate the image
 //
 	
 function ProjectedOverlay(map, imageUrl, bounds, opts)
@@ -25,7 +26,7 @@ function ProjectedOverlay(map, imageUrl, bounds, opts)
  this.addZ_ = opts.addZoom || '' ;				// Add the zoom to the image as a parameter
  this.id_ = opts.id || this.url_ ;				// Added to allow for multiple images
  this.percentOpacity_ = opts.percentOpacity || 50 ;
-
+ this.rotation_ = opts.rotation || 0;
  this.setMap(map);
 }
 
@@ -46,6 +47,10 @@ ProjectedOverlay.prototype.createElement = function()
   if( this.percentOpacity_ )
   {
    this.setOpacity(this.percentOpacity_) ;
+  }
+  if ( this.rotation_ ) 
+  {
+   this.setRotation(this.rotation_) ;
   }
   panes.overlayLayer.appendChild(div);
  }
@@ -136,4 +141,11 @@ ProjectedOverlay.prototype.setOpacity=function(opacity)
   this.div_.style.opacity = c ;
  }
 }
-
+ProjectedOverlay.prototype.setRotation=function(deg)
+{
+  this.div_.style.webkitTransform = 'rotate('+deg+'deg)'; 
+  this.div_.style.mozTransform    = 'rotate('+deg+'deg)'; 
+  this.div_.style.msTransform     = 'rotate('+deg+'deg)'; 
+  this.div_.style.oTransform      = 'rotate('+deg+'deg)'; 
+  this.div_.style.transform       = 'rotate('+deg+'deg)'; 
+}

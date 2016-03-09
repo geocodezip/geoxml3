@@ -802,6 +802,7 @@ function processStyleUrl(node) {
         }
       }
 
+      var overlayCreateFunc = parserOptions.createOverlay || createOverlay;
       // Parse ground overlays
       if (!!doc.reload && !!doc.groundoverlays) {
         for (i = 0; i < doc.groundoverlays.length; i++) {
@@ -832,7 +833,8 @@ function processStyleUrl(node) {
             east:  parseFloat(nodeValue(getElementsByTagName(node, 'east')[0])),
             south: parseFloat(nodeValue(getElementsByTagName(node, 'south')[0])),
             west:  parseFloat(nodeValue(getElementsByTagName(node, 'west')[0]))
-          }
+          },
+          rotation: -1 * parseFloat(nodeValue(getElementsByTagName(node, 'rotation')[0]))
         };
         if (!!google.maps) {
           doc.bounds = doc.bounds || new google.maps.LatLngBounds();
@@ -851,33 +853,27 @@ function processStyleUrl(node) {
         }
 
         doc.groundoverlays.push(groundOverlay);
-        if (!!parserOptions.createOverlay) {
-          // User-defined overlay handler
-          parserOptions.createOverlay(groundOverlay, doc);
-        } else {
-          // Check to see if this overlay was created on a previous load of this document
-          var found = false;
-          if (!!doc) {
-            doc.groundoverlays = doc.groundoverlays || [];
-            if (doc.reload) {
-              overlayBounds = new google.maps.LatLngBounds(
-                new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
-                new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east)
-              );
-              var overlays = doc.groundoverlays;
-              for (i = overlays.length; i--;) {
-                if ((overlays[i].bounds().equals(overlayBounds)) &&
-                    (overlays.url_ === groundOverlay.icon.href)) {
-                  found = overlays[i].active = true;
-                  break;
-                }
+        // Check to see if this overlay was created on a previous load of this document
+        var found = false;
+        if (!!doc) {
+          doc.groundoverlays = doc.groundoverlays || [];
+          if (doc.reload) {
+            overlayBounds = new google.maps.LatLngBounds(
+              new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
+              new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east)
+            );
+            var overlays = doc.groundoverlays;
+            for (i = overlays.length; i--;) {
+              if ((overlays[i].bounds().equals(overlayBounds)) &&
+                  (overlays.url_ === groundOverlay.icon.href)) {
+                found = overlays[i].active = true;
+                break;
               }
             }
           }
 
           if (!found) {
-            // Call the built-in overlay creator
-            overlay = createOverlay(groundOverlay, doc);
+            overlay = overlayCreateFunc(groundOverlay, doc);
             overlay.active = true;
           }
         }
@@ -1209,7 +1205,10 @@ function processStyleUrl(node) {
         new google.maps.LatLng(groundOverlay.latLonBox.south, groundOverlay.latLonBox.west),
         new google.maps.LatLng(groundOverlay.latLonBox.north, groundOverlay.latLonBox.east)
     );
-    var overlayOptions = geoXML3.combineOptions(parserOptions.overlayOptions, {percentOpacity: groundOverlay.opacity*100});
+    var overlayOptions = geoXML3.combineOptions(parserOptions.overlayOptions, {
+      percentOpacity: groundOverlay.opacity*100,
+      rotation: groundOverlay.rotation
+    });
     var overlay = new ProjectedOverlay(parserOptions.map, groundOverlay.icon.href, bounds, overlayOptions);
 
     if (!!doc) {
