@@ -131,7 +131,7 @@ geoXML3.parser = function (options) {
     render(geoXML3.xmlParse(kmlString),thisDoc);
   }
 
-  var parse = function (urls, docSet) {
+  var parse = function (urls, docSet, callback) {
     // Process one or more KML documents
     if (!parserName) {
       parserName = 'geoXML3.instances[' + (geoXML3.instances.push(this) - 1) + ']';
@@ -164,12 +164,12 @@ geoXML3.parser = function (options) {
       }
       thisDoc.url       = urls[i];
       thisDoc.internals = internals;
-      fetchDoc(thisDoc.url, thisDoc);
+      fetchDoc(thisDoc.url, thisDoc, null, callback);
     }
   };
 
-  function fetchDoc(url, doc, resFunc) {
-    resFunc = resFunc || function (responseXML) { render(responseXML, doc); };
+  function fetchDoc(url, doc, resFunc, callback) {
+    resFunc = resFunc || function (responseXML) { render(responseXML, doc, callback); };
 
     if (typeof ZipFile === 'function' && typeof JSIO === 'object' && typeof JSIO.guessFileType === 'function') {  // KMZ support requires these modules loaded
       // if url is a data URI scheme, do not guess type based on extension.
@@ -474,7 +474,7 @@ function processStyleUrl(node) {
     return coordListA;
   }
 
-  var render = function (responseXML, doc) {
+  var render = function (responseXML, doc, callback) {
     // Callback for retrieving a KML document: parse the KML and display it on the map
     if (!responseXML || responseXML == "failed parse") {
       // Error retrieving the data
@@ -989,6 +989,10 @@ function processStyleUrl(node) {
         parserOptions.afterParse(doc.internals.docSet);
       }
       google.maps.event.trigger(doc.internals.parser, 'parsed');   
+      // If the user has specified a callback, execute it.
+      if(typeof callback === "function") {
+          callback();
+      }
     }
   };
 
