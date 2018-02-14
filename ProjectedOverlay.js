@@ -93,15 +93,6 @@ ProjectedOverlay.prototype.draw = function(firstTime)
  this.div_.style.left = Math.min(c2.x, c1.x) + "px";
  this.div_.style.top = Math.min(c2.y, c1.y) + "px";
 
- // Do the rest only if the zoom has changed...
- 
- if ( this.lastZoom_ == this.map_.getZoom() )
- {
-  return ;
- }
-
- this.lastZoom_ = this.map_.getZoom() ;
-
  var url = this.url_ ;
 
  if ( this.addZ_ )
@@ -110,6 +101,15 @@ ProjectedOverlay.prototype.draw = function(firstTime)
  }
 
  this.div_.innerHTML = '<img src="' + url + '"  width=' + this.div_.style.width + ' height=' + this.div_.style.height + ' >' ;
+	
+ // Do the rest only if the zoom has changed...
+ 
+ if ( this.lastZoom_ == this.map_.getZoom() )
+ {
+  return ;
+ }
+
+ this.lastZoom_ = this.map_.getZoom() ;
 }
 
 ProjectedOverlay.prototype.setOpacity=function(opacity)
