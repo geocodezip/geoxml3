@@ -728,6 +728,7 @@
         var _ArrayBufferGetBinResource = function(fileURL){
             var binStream= this;
             this.req = new XMLHttpRequest();
+            this.req.withCredentials = true;
             this.req.open('GET', fileURL, true);
             this.req.onreadystatechange = function(aEvt) {
                 if (binStream.req.readyState == 4) {
