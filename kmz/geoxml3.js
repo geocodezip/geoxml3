@@ -1632,6 +1632,7 @@ geoXML3.fetchXML = function (url, callback) {
     }
   }
 
+  xhrFetcher.fetcher.withCredentials = true;
   xhrFetcher.fetcher.open('GET', url, true);
   if (!!xhrFetcher.fetcher.overrideMimeType) xhrFetcher.fetcher.overrideMimeType('text/xml');
   xhrFetcher.fetcher.onreadystatechange = function () {
