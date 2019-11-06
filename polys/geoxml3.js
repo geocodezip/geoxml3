@@ -422,7 +422,8 @@ var coordListA = [];
         var GeometryNodes = node.getElementsByTagName('coordinates');
         var Geometry = null;
 	if (!!GeometryNodes && (GeometryNodes.length > 0)) {
-          for (var gn=0;gn<GeometryNodes.length;gn++) {
+          var shouldRun = true;
+          for (var gn=0;gn<GeometryNodes.length && shouldRun;gn++) {
              if (!GeometryNodes[gn].parentNode ||
                  !GeometryNodes[gn].parentNode.nodeName) {
 
@@ -457,6 +458,7 @@ var coordListA = [];
                placemark.Polygon[pg].innerBoundaryIs = processPlacemarkCoords(polygonNodes[pg], "innerBoundaryIs");
             }
             coordList = placemark.Polygon[0].outerBoundaryIs;
+            shouldRun = false;	
             break;
 
           case "LineString":
